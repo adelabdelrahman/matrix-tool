@@ -1,6 +1,6 @@
 (function () {
     // =========================================================================
-    // القسم الأول: إعدادات الأمان وإنشاء صندوق الرسائل المخصص
+    // القسم الأول: إعدادات الأمان وإنشاء صندوق الرسائل
     // =========================================================================
     var _0xDomain = window.location.hostname;
     var _0xTarget = '\x6d\x61\x74\x72\x69\x78\x2e\x73\x6b\x79\x62\x61\x67\x65\x67\x79\x70\x74\x2e\x63\x6f\x6d';
@@ -9,12 +9,18 @@
         return;
     }
 
-    // دالة إنشاء صندوق الرسائل الأنيق (بالتصميم الجديد المتوسطن)
+    // توليد رقم تعريفي خاص بالجهاز (يُحفظ مرة واحدة في المتصفح)
+    var myDeviceId = localStorage.getItem('adel_device_id');
+    if (!myDeviceId) {
+        myDeviceId = 'PC-' + Math.floor(Math.random() * 9000 + 1000);
+        localStorage.setItem('adel_device_id', myDeviceId);
+    }
+
     function showBlockedMessage() {
         if (document.getElementById('adel-blocked-msg')) return;
         var msg = document.createElement('div');
         msg.id = 'adel-blocked-msg';
-        msg.dir = "rtl"; // إجبار التوسيط العربي
+        msg.dir = "rtl"; 
         msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:rgba(15,23,42,0.92);border:1px solid rgba(239,68,68,0.4);border-radius:20px;padding:35px 25px;color:#fff;font-family:'Segoe UI',sans-serif;z-index:2147483647;box-shadow:0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(239,68,68,0.1);min-width:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;backdrop-filter:blur(15px);animation:adelPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);";
         
         msg.innerHTML = `
@@ -30,12 +36,11 @@
         document.body.appendChild(msg);
     }
 
-    // المخزن اللحظي للإعدادات
     window.adelServerConfig = window.adelServerConfig || { isActive: true, pass: "02026", hols: [] };
     var dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
+    var pingUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices/" + myDeviceId + ".json";
     var isEngineRunning = false;
 
-    // معالجة النقر على البوك مارك أثناء الإيقاف
     if (window.adelLoaded) {
         if (window.adelServerConfig && window.adelServerConfig.isActive === false) {
             showBlockedMessage();
@@ -48,6 +53,7 @@
     }
 
     function liveSync() {
+        // 1. جلب الإعدادات
         fetch(dbUrl).then(function (r) { return r.json(); }).then(function (data) {
             if (data !== null) {
                 if (typeof data === 'boolean') {
@@ -77,6 +83,18 @@
                 isEngineRunning = true;
                 runAdelEngine();
             }
+
+            // 2. إرسال النبض (Heartbeat) للسيرفر لو الموظف عامل Login
+            if (window.adelLogged && window.adelServerConfig.isActive !== false) {
+                fetch(pingUrl, {
+                    method: 'PUT',
+                    body: JSON.stringify({ 
+                        lastSeen: new Date().getTime(), 
+                        os: navigator.platform // لمعرفة نظام التشغيل
+                    })
+                }).catch(function(){});
+            }
+
         }).catch(function (error) {
             if (!isEngineRunning) {
                 isEngineRunning = true;
