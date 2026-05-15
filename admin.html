@@ -31,16 +31,34 @@
             box-sizing: border-box; 
         }
         
-        .dashboard-wrapper { 
+        /* شاشة تسجيل الدخول */
+        #login-screen {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 10vh;
+            display: flex; /* هتكون ظاهرة في البداية */
+            flex-direction: column;
+            gap: 20px;
+            animation: adelFadeIn 0.5s ease;
+        }
+
+        /* حاوية الداشبورد العريضة (مخفية في البداية) */
+        #main-dashboard { 
             width: 100%; 
             max-width: 1100px; 
-            display: flex; 
+            display: none; /* مخفية حتى تسجيل الدخول */
             flex-direction: column; 
             gap: 25px; 
+            animation: adelFadeIn 0.5s ease;
         }
         
+        @keyframes adelFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* Header */
-        header { border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 10px; }
+        header { border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 10px; text-align: center;}
         .header-title { font-size: 28px; font-weight: 900; color: #fff; margin: 0 0 5px 0; letter-spacing: 1px; }
         .header-title span { color: var(--accent-blue); }
         .header-subtitle { font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px;}
@@ -94,8 +112,8 @@
         /* Inputs & Buttons */
         .input-group { margin-bottom: 20px; }
         .input-label { display: block; color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
-        input[type="text"] { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #030712; color: #fff; text-align: center; font-size: 16px; font-weight: bold; font-family: monospace; box-sizing: border-box; transition: 0.3s; }
-        input[type="text"]:focus { outline: none; border-color: var(--accent-blue); }
+        input[type="text"], input[type="password"] { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #030712; color: #fff; text-align: center; font-size: 16px; font-weight: bold; font-family: monospace; box-sizing: border-box; transition: 0.3s; }
+        input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: var(--accent-blue); }
         
         .btn-primary { background: var(--accent-blue); color: white; border: none; padding: 18px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; font-family: 'Tajawal', sans-serif; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;}
         .btn-primary:hover { background: var(--accent-hover); }
@@ -164,16 +182,26 @@
 </head>
 <body>
 
-    <div class="dashboard-wrapper">
+    <div id="login-screen">
+        <header style="border:none; padding-bottom: 0;">
+            <h1 class="header-title">SkyBag <span>Admin</span></h1>
+            <div class="header-subtitle">System Authentication</div>
+        </header>
+        <div class="admin-card" style="align-items: center; text-align: center; gap: 15px; padding: 40px 25px;">
+            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">يرجى إدخال كلمة مرور الإدارة للوصول للوحة التحكم</div>
+            <input type="password" id="authPassInput" placeholder="Admin Password" dir="ltr" autofocus>
+            <button class="btn-primary" onclick="verifyAdmin()" style="margin-top: 15px;">Access System</button>
+        </div>
+    </div>
+
+    <div id="main-dashboard">
         <header>
             <h1 class="header-title">SkyBag <span>Admin</span></h1>
-            <div class="header-subtitle">Matrix Tool Admin</div>
+            <div class="header-subtitle">System Control & Live Monitoring</div>
         </header>
 
         <main class="grid-container">
-            
             <div style="display: flex; flex-direction: column; gap: 20px;">
-                
                 <div class="admin-card">
                     <div class="section-header">System Status</div>
                     <div class="switch-wrapper">
@@ -200,7 +228,6 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 20px;">
-                
                 <div class="admin-card">
                     <div class="section-header">Security Settings</div>
                     <div class="input-group">
@@ -217,7 +244,6 @@
                     </div>
                     <div id="adminHolsList" class="list-container"></div>
                 </div>
-
             </div>
         </main>
 
@@ -227,6 +253,35 @@
     </div>
 
     <script>
+        // =======================================================
+        // 1. نظام تسجيل الدخول للآدمن (البوابة)
+        // =======================================================
+        
+        // 🔴 غير الباسورد ده براحتك، ده باسورد فتح لوحة التحكم نفسها 🔴
+        const DASHBOARD_PASSWORD = "admin@0282003"; 
+
+        document.getElementById('authPassInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') verifyAdmin();
+        });
+
+        function verifyAdmin() {
+            const inputVal = document.getElementById('authPassInput').value;
+            if (inputVal === DASHBOARD_PASSWORD) {
+                // إخفاء تسجيل الدخول وإظهار اللوحة
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-dashboard').style.display = 'flex';
+                // بدء تشغيل سحب البيانات من السيرفر
+                initDashboard();
+                showSystemToast("تم تسجيل الدخول بنجاح", "success");
+            } else {
+                showSystemToast("كلمة المرور غير صحيحة", "error");
+                document.getElementById('authPassInput').style.borderColor = "var(--danger)";
+            }
+        }
+
+        // =======================================================
+        // 2. إعدادات لوحة التحكم (الداشبورد)
+        // =======================================================
         const dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
         const devicesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices.json";
         
@@ -239,6 +294,7 @@
         
         let currentHolidays = []; 
         let blockedDevices = []; 
+        let liveSyncInterval; // متغير للتحكم في المزامنة الحية
 
         function showSystemToast(message, type = 'success') {
             const existing = document.getElementById('sys-toast');
@@ -259,21 +315,26 @@
             }, 3000);
         }
 
-        fetch(dbUrl).then(r => r.json()).then(data => {
-            if(data !== null) {
-                if (typeof data === 'boolean') { powerSwitch.checked = data; } 
-                else {
-                    powerSwitch.checked = (data.isActive !== false);
-                    if(data.password) passInput.value = data.password;
-                    if(data.holidays) currentHolidays = data.holidays;
-                    if(data.blockedDevices) blockedDevices = data.blockedDevices;
+        // الدالة دي مبتشتغلش إلا لو الباسورد صح
+        function initDashboard() {
+            fetch(dbUrl).then(r => r.json()).then(data => {
+                if(data !== null) {
+                    if (typeof data === 'boolean') { powerSwitch.checked = data; } 
+                    else {
+                        powerSwitch.checked = (data.isActive !== false);
+                        if(data.password) passInput.value = data.password;
+                        if(data.holidays) currentHolidays = data.holidays;
+                        if(data.blockedDevices) blockedDevices = data.blockedDevices;
+                    }
                 }
-            }
-            updateText();
-            renderAdminHols();
-        });
+                updateText();
+                renderAdminHols();
+            });
 
-        powerSwitch.addEventListener('change', updateText);
+            powerSwitch.addEventListener('change', updateText);
+            fetchActiveDevices();
+            liveSyncInterval = setInterval(fetchActiveDevices, 3000);
+        }
 
         function updateText() {
             if(powerSwitch.checked) {
@@ -321,8 +382,6 @@
             }).catch(()=>{});
         }
         
-        setInterval(fetchActiveDevices, 3000);
-
         window.toggleBlock = function(id) {
             if(blockedDevices.includes(id)) {
                 blockedDevices = blockedDevices.filter(d => d !== id); 
@@ -358,14 +417,14 @@
                 password: passInput.value,
                 holidays: currentHolidays,
                 blockedDevices: blockedDevices,
-                adminKey: 'Adel_Matrix_2026' 
+                adminKey: 'Adel_Matrix_2026' // المفتاح السري للفايربيس
             };
             fetch(dbUrl, { method: 'PUT', body: JSON.stringify(config) })
             .then(response => {
                 if(!response.ok) throw new Error("Unauthorized");
-                if(!silent) showSystemToast("تم نشر التعديلات بنجاح على جميع الأجهزة!", "success"); 
+                if(!silent) showSystemToast("System configuration updated successfully.", "success"); 
             })
-            .catch(() => { if(!silent) showSystemToast("تم رفض التعديل! تأكد من صلاحيات الفايربيس.", "error"); });
+            .catch(() => { if(!silent) showSystemToast("Failed to connect or unauthorized.", "error"); });
         }
     </script>
 </body>
