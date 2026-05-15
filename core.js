@@ -18,6 +18,7 @@
         .then(function (data) {
             var isActive = true;
             var dynamicPass = "02026";
+            var adminHolidays = [];
 
             if (data !== null) {
                 if (typeof data === 'boolean') {
@@ -25,6 +26,7 @@
                 } else {
                     isActive = data.isActive !== false;
                     if (data.password) dynamicPass = data.password;
+                    if (data.holidays && Array.isArray(data.holidays)) adminHolidays = data.holidays;
                 }
             }
 
@@ -33,16 +35,16 @@
                 return;
             }
 
-            runAdelEngine(dynamicPass);
+            runAdelEngine(dynamicPass, adminHolidays);
         })
         .catch(function (error) {
-            runAdelEngine("02026");
+            runAdelEngine("02026", ["29/1/2026"]);
         });
 
     // =========================================================================
     // القسم الثاني: المحرك الأساسي (Adel Engine) - التشغيل والمتغيرات
     // =========================================================================
-    function runAdelEngine(serverPassword) {
+    function runAdelEngine(serverPassword, serverHolidays) {
         var v = localStorage.getItem('adel_engine_v1');
         if (v) {
             try {
@@ -94,19 +96,16 @@
 
         try {
             var MyPass = serverPassword;
+            var holidays = serverHolidays || []; // أخذ الإجازات من السيرفر مباشرة
             var ps = null;
             var doEdit = false;
             var accDb = {};
-            var holidays = [];
             var db = [];
             var queue = [];
             var history = [];
 
             try { accDb = JSON.parse(localStorage.getItem("adel_acc_db") || "{}"); } catch (e) { }
             try { queue = JSON.parse(localStorage.getItem("adel_queue") || "[]"); } catch (e) { }
-
-            var storedHols = localStorage.getItem("adel_holidays");
-            holidays = storedHols ? JSON.parse(storedHols) : ["29/1/2026"];
 
             var todayKey = new Date().toLocaleDateString('en-CA');
             if (localStorage.getItem("adel_date_key") !== todayKey) {
@@ -292,7 +291,9 @@
                 d.tabIndex = "-1";
                 
                 var lH = "<div id='login-view'><h1 style='font-family:\"Times New Roman\",serif;font-style:italic;font-size:55px;color:#fff;text-shadow:0 0 20px #0ea5e9;margin-bottom:30px;font-weight:bold'>Sky Bag</h1><input type='password' id='pass-inp' class='pass-inp' placeholder='PASSCODE'><button id='ul-btn' class='unlock-btn'>LOGIN</button><div id='e-msg' style='color:#ef4444;font-size:11px;margin-top:20px;font-weight:700'></div></div>";
-                var aH = "<div id='app-view' style='display:none;flex-direction:column;height:100%'><div class='app-header'><div class='brand'>⚡ ADEL</div><div class='tools'><span class='counter-box' id='cnt-badge'>" + window.adelCnt + "</span><button class='icon-btn trash' onclick='clearDB()' title='History'>🗑</button><button class='icon-btn' onclick='resetCnt()' title='Reset'>🔄</button><button class='icon-btn' onclick='toggleSet()' title='Settings'>⚙</button></div></div><div class='app-body'><div id='main-view' class='sub-view' style='display:block'><div class='mode-list' id='mode-list'></div><button id='next-awb-btn' class='next-btn' onclick='loadNext()' style='display:none'>Next ▶</button></div><div id='set-view' class='sub-view'><div class='view-title'>SETTINGS</div><div class='set-card'><div class='set-head'>DATA MANAGEMENT</div><div class='mode-list'><div class='mode-btn' onclick='showHols()'><span class='mode-icon'>📅</span>Holiday Manager</div></div></div><div class='back-btn' onclick='showMain()'>← Return to Main</div></div><div id='hol-view' class='sub-view'><div class='view-title'>HOLIDAYS</div><div class='footer-bar' style='margin:0 0 15px 0;background:rgba(0,0,0,0.3)'><input id='new-hol' class='date-inp' placeholder='e.g. 29/1' style='text-align:left;padding-left:15px'><button onclick='addHol()' class='save-btn' style='width:35px;height:30px;font-size:18px'>+</button></div><div id='hol-list' style='max-height:120px;overflow-y:auto;padding-right:5px;margin-top:15px'></div><button class='back-btn' onclick='toggleSet()'>Back</button></div><div class='hint'>[`] NEXT • [F1] UNDO • [ESC] CLOSE<div style='margin-top:8px;color:var(--accent);font-weight:800;letter-spacing:2px'>© ENG ADEL 2026</div></div></div></div>";
+                
+                // تم إزالة الكلمة المزعجة من نهاية هذا السطر وتم تعديل صفحة الإجازات لتكون للعرض فقط
+                var aH = "<div id='app-view' style='display:none;flex-direction:column;height:100%'><div class='app-header'><div class='brand'>⚡ ADEL</div><div class='tools'><span class='counter-box' id='cnt-badge'>" + window.adelCnt + "</span><button class='icon-btn trash' onclick='clearDB()' title='History'>🗑</button><button class='icon-btn' onclick='resetCnt()' title='Reset'>🔄</button><button class='icon-btn' onclick='toggleSet()' title='Settings'>⚙</button></div></div><div class='app-body'><div id='main-view' class='sub-view' style='display:block'><div class='mode-list' id='mode-list'></div><button id='next-awb-btn' class='next-btn' onclick='loadNext()' style='display:none'>Next ▶</button></div><div id='set-view' class='sub-view'><div class='view-title'>SETTINGS</div><div class='set-card'><div class='set-head'>DATA MANAGEMENT</div><div class='mode-list'><div class='mode-btn' onclick='showHols()'><span class='mode-icon'>📅</span>Holiday Manager</div></div></div><div class='back-btn' onclick='showMain()'>← Return to Main</div></div><div id='hol-view' class='sub-view'><div class='view-title'>HOLIDAYS (READ ONLY)</div><div id='hol-list' style='max-height:160px;overflow-y:auto;padding-right:5px;margin-top:10px'></div><button class='back-btn' onclick='toggleSet()'>Back</button></div><div class='hint'><div style='margin-top:8px;color:var(--accent);font-weight:800;letter-spacing:2px'>© ENG ADEL 2026</div></div></div></div>";
                 
                 d.innerHTML = lH + aH;
                 var cObj = d.querySelector("#mode-list");
@@ -347,34 +348,23 @@
 
                 window.showMain = function () { vis('main-view', Array.from(document.querySelectorAll('#mode-list .mode-btn'))); };
                 window.toggleSet = function () { vis('set-view', Array.from(document.querySelectorAll('#set-view .mode-btn'))); };
-                window.showHols = function () { renderHols(); vis('hol-view', [document.querySelector('#hol-view .save-btn')]); };
+                
+                window.showHols = function () { 
+                    renderHols(); 
+                    vis('hol-view', [document.querySelector('#hol-view .back-btn')]); 
+                };
 
+                // تم تعديل الدالة لتعرض التاريخ بجانبه قفل فقط
                 var renderHols = function () {
                     var l = document.getElementById('hol-list');
                     l.innerHTML = '';
-                    if (holidays.length === 0) l.innerHTML = "<div style='text-align:center;font-size:11px;color:#94a3b8;padding:5px;'>No Data</div>";
+                    if (holidays.length === 0) l.innerHTML = "<div style='text-align:center;font-size:11px;color:#94a3b8;padding:5px;'>لا يوجد تواريخ محظورة</div>";
                     holidays.forEach(function (h, i) {
                         var r = document.createElement('div');
-                        r.style.cssText = "display:flex;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);margin-bottom:6px;border-radius:8px;font-size:12px;align-items:center;border:1px solid rgba(255,255,255,0.05)";
-                        r.innerHTML = "<span>" + h + "</span><span style='color:#f43f5e;cursor:pointer;font-weight:bold' onclick='delHol(" + i + ")'>×</span>";
+                        r.style.cssText = "display:flex;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.03);margin-bottom:6px;border-radius:8px;font-size:14px;align-items:center;border:1px solid rgba(255,255,255,0.05)";
+                        r.innerHTML = "<span style='font-weight:bold; letter-spacing:1px;'>" + h + "</span><span style='color:#0ea5e9;font-size:14px'>🔒</span>";
                         l.appendChild(r);
                     });
-                };
-
-                window.addHol = function () {
-                    var v = document.getElementById('new-hol').value;
-                    if (v) {
-                        holidays.push(v);
-                        localStorage.setItem('adel_holidays', JSON.stringify(holidays));
-                        document.getElementById('new-hol').value = '';
-                        renderHols();
-                    }
-                };
-
-                window.delHol = function (i) {
-                    holidays.splice(i, 1);
-                    localStorage.setItem('adel_holidays', JSON.stringify(holidays));
-                    renderHols();
                 };
 
                 window.setM = function (m, s) {
