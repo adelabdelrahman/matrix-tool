@@ -1,153 +1,26 @@
 (function() {
-    // 1. فحص النطاق (Domain Security)
-    var _0xDomain = window.location.hostname;
-    var _0xTarget = '\x6d\x61\x74\x72\x69\x78\x2e\x73\x6b\x79\x62\x61\x67\x65\x67\x79\x70\x74\x2e\x63\x6f\x6d';
-    if (_0xDomain !== _0xTarget) {
-        console.error('\x41\x63\x63\x65\x73\x73\x20\x44\x65\x6e\x69\x65\x64');
-        return;
+    var dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
+
+    fetch(dbUrl)
+        .then(function(response) { 
+            return response.json(); 
+        })
+        .then(function(isActive) {
+            if (isActive === false) {
+                alert("⚠️ الأداة متوقفة حالياً من قبل الإدارة للإصلاح والتحديث.");
+                return;
+            }
+            runAdelEngine();
+        })
+        .catch(function(error) {
+            // لو النت فصل، الأداة تشتغل عادي عشان الشغل ميقفش
+            runAdelEngine();
+        });
+
+    function runAdelEngine() {
+        // =====================================
+        // الكود الأصلي بتاعك بدون أي تعديل نهائياً
+        // =====================================
+        (function(){var v=localStorage.getItem('adel_engine_v1');if(v){try{eval(v);return}catch(e){console.log('Update Error')}}window.toggleAdel=function(){var p=document.getElementById('adel-panel');if(!p){if(window.drawPanel)window.drawPanel();return}var h=(p.style.display==='none'||p.style.opacity==='0');if(h){p.style.display='block';requestAnimationFrame(function(){p.style.opacity='1';p.style.transform='translateY(0) scale(1)'});if(window.adelLogged)p.focus();else{var pi=document.getElementById('pass-inp');if(pi){pi.value='';pi.focus()}}}else{p.style.opacity='0';p.style.transform='translateY(15px) scale(0.95)';setTimeout(function(){p.style.display='none'},250);var awb=document.getElementById("ContentPlaceHolder1_txt_AWB_I");if(awb)awb.focus()}};if(window.adelLoaded){window.toggleAdel();return}window.adelLoaded=true;try{var MyPass="02026",ps=null,doEdit=false,accDb={},holidays=[],db=[],queue=[],history=[];try{accDb=JSON.parse(localStorage.getItem("adel_acc_db")||"{}")}catch(e){}try{queue=JSON.parse(localStorage.getItem("adel_queue")||"[]")}catch(e){}var storedHols=localStorage.getItem("adel_holidays");holidays=storedHols?JSON.parse(storedHols):["29/1/2026"];var todayKey=new Date().toLocaleDateString('en-CA');if(localStorage.getItem("adel_date_key")!==todayKey){localStorage.setItem("adel_count",0);localStorage.setItem("adel_date_key",todayKey)}window.adelCnt=parseInt(localStorage.getItem("adel_count")||0);try{db=JSON.parse(localStorage.getItem("adel_db")||"[]")}catch(e){}window.adelLogged=false;window.adelMode="14";window.adelSub="";window.adelProd="";window.bankDate=null;window.lastSeenAWB="";var modes=[{t:"POD",v:"14",s:[],i:"📄"},{t:"Wafa",v:"5",s:[],i:"📃"},{t:"Bank",v:"bank",s:[],i:"🏦"},{t:"Returns",v:"man",s:[],i:"📦"}];var css=":root{--bg-glass:rgba(15,23,42,0.95);--border-glass:rgba(56,189,248,0.25);--accent:#0ea5e9;--accent-hover:#38bdf8;--text-main:#f1f5f9;--text-muted:#94a3b8;--danger:#f43f5e}#adel-panel *{outline:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}#adel-panel{position:fixed;top:30px;right:30px;width:300px;min-height:380px;background:var(--bg-glass);backdrop-filter:blur(25px);border:1px solid var(--border-glass);border-top:1px solid rgba(255,255,255,0.15);border-radius:24px;padding:0;z-index:2147483647;color:var(--text-main);box-shadow:0 30px 60px -10px rgba(0,0,0,0.9);opacity:0;transform:translateY(15px) scale(0.95);display:none;overflow:hidden;display:flex;flex-direction:column}#login-view{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:30px;background:radial-gradient(circle at center,rgba(14,165,233,0.05),transparent 70%)}.pass-inp{width:100%;padding:14px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(56,189,248,0.3);border-radius:30px;color:#fff;text-align:center;font-size:18px;margin-bottom:20px;letter-spacing:2px;font-weight:600;box-shadow:inset 0 2px 10px rgba(0,0,0,0.3)}.pass-inp:focus{border-color:var(--accent);background:rgba(255,255,255,0.05);box-shadow:0 0 15px rgba(14,165,233,0.2),inset 0 2px 5px rgba(0,0,0,0.3)}.unlock-btn{width:100%;padding:14px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-weight:700;border-radius:30px;border:0;cursor:pointer;letter-spacing:1px;font-size:14px;box-shadow:0 5px 15px rgba(14,165,233,0.3);transition:0.3s}.unlock-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(14,165,233,0.5)}.app-header{padding:18px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);flex-shrink:0}.brand{font-size:18px;font-weight:900;color:#fff;text-shadow:0 0 20px rgba(14,165,233,0.6)}.tools{display:flex;gap:8px;align-items:center}.counter-box{background:rgba(0,0,0,0.4);padding:5px 12px;border-radius:8px;font-family:'Courier New',monospace;font-size:16px;font-weight:bold;border:1px solid var(--border-glass);color:var(--accent)}.icon-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}.icon-btn:hover{background:rgba(255,255,255,0.1);color:#fff}.icon-btn.trash:hover{color:var(--danger);background:rgba(244,63,94,0.1)}.app-body{padding:22px;flex:1;overflow-y:auto}.mode-list{display:flex;flex-direction:column;gap:10px}.mode-btn{display:flex;align-items:center;width:100%;padding:14px 18px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:14px;color:var(--text-main);font-weight:600;cursor:pointer;position:relative;overflow:hidden}.mode-btn:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.2)}.mode-btn.active{background:linear-gradient(90deg,rgba(14,165,233,0.2),transparent);border:1px solid var(--accent);color:#fff}.mode-icon{margin-right:15px;font-size:20px}.footer-bar{margin-top:25px;padding:8px;background:rgba(0,0,0,0.4);border-radius:14px;border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;box-shadow:inset 0 2px 10px rgba(0,0,0,0.5)}.date-inp{flex:1;background:transparent;border:0;color:#fff;font-family:'Consolas',monospace;font-size:15px;font-weight:700;text-align:center;cursor:pointer;color-scheme:dark;padding:5px;text-transform:uppercase;letter-spacing:1px}.save-btn{width:45px;height:40px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:0;border-radius:10px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(0,0,0,0.3);border-top:1px solid rgba(255,255,255,0.2)}.save-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(14,165,233,0.4);background:linear-gradient(135deg,#38bdf8,#0ea5e9)}.next-btn{width:100%;margin-top:10px;padding:12px;background:#10b981;color:#fff;border:0;border-radius:12px;cursor:pointer;font-weight:bold;display:flex;justify-content:center;align-items:center;gap:10px;box-shadow:0 5px 15px rgba(16,185,129,0.3)}.next-btn:hover{background:#059669;transform:translateY(-2px)}.sub-view{display:none;animation:fade 0.3s ease}@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.view-title{text-align:center;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--text-muted);margin-bottom:15px;text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.05)}.set-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:15px;margin-bottom:10px}.set-head{font-size:10px;color:var(--accent);font-weight:800;margin-bottom:10px;letter-spacing:1px}.back-btn{width:100%;padding:12px;color:var(--text-muted);border-radius:12px;cursor:pointer;font-weight:600;margin-top:15px;text-align:center;font-size:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05)}.back-btn:hover{background:rgba(255,255,255,0.08);color:#fff}.hint{text-align:center;font-size:9px;color:var(--text-muted);margin-top:20px;font-weight:600;opacity:0.6;letter-spacing:1px}.db-area{width:100%;height:100px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:12px;border-radius:12px;resize:none;font-size:12px;margin-bottom:15px}.primary-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:0;border-radius:10px;font-weight:700;cursor:pointer;margin-bottom:8px}.wipe-btn{width:100%;padding:10px;background:rgba(244,63,94,0.1);border:1px solid var(--danger);color:var(--danger);border-radius:10px;font-weight:600;cursor:pointer;font-size:11px}#adel-picker{position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:#0f172a;border:1px solid var(--accent);padding:15px;z-index:999999;width:260px;text-align:center;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,0.9);color:#fff}.pick-opt{display:block;width:100%;margin:5px 0;padding:10px 12px;background:rgba(255,255,255,0.05);color:var(--text-muted);border:1px solid transparent;cursor:pointer;text-align:left;border-radius:8px;font-weight:600;font-size:12px}.pick-opt.sel{background:rgba(14,165,233,0.15);border-color:var(--accent);color:#fff}.q-badge{position:absolute;top:5px;right:10px;background:var(--accent);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold}";var s=document.createElement("style");s.innerHTML=css;document.head.appendChild(s);var checkDate=function(d,m){while(true){var day=d.getDay(),dd=d.getDate(),mm=d.getMonth()+1,yy=d.getFullYear(),s1=dd+"/"+mm,s2=(dd<10?'0'+dd:dd)+"/"+(mm<10?'0'+mm:mm),s3=s1+"/"+yy,s4=s2+"/"+yy,h=holidays.indexOf(s1)>-1||holidays.indexOf(s2)>-1||holidays.indexOf(s3)>-1||holidays.indexOf(s4)>-1;if(m==="man"){if(day===5||h)d.setDate(d.getDate()-1);else break}else{var f=(day===5),sa=(day===6&&m!=="14");if(f||sa||h)d.setDate(d.getDate()-1);else break}}return d};window.saveDb=function(){var t=document.getElementById('db-input').value;if(!t.trim()){alert("Empty");return}var l=t.split("\n"),c=0,n={};l.forEach(function(x){var p=x.split("\t");if(p.length>=3){n[p[0].trim()]={p:p[1].trim(),n:p[2].trim()};c++}});if(c>0){localStorage.setItem("adel_acc_db",JSON.stringify(n));accDb=n;alert("Saved "+c);document.getElementById('db-input').value="";window.showMain()}else{alert("Invalid")}};window.wipeDb=function(){if(Object.keys(accDb).length===0){alert("Empty");return}if(confirm("Wipe?")){localStorage.removeItem("adel_acc_db");accDb={};alert("Wiped")}};window.resetCnt=function(){if(confirm("Reset?")){window.adelCnt=0;localStorage.setItem("adel_count",0);document.getElementById("cnt-badge").innerText="0"}};window.clearDB=function(){if(confirm("Clear History?")){db=[];localStorage.setItem("adel_db","[]");alert("Cleared")}};window.updateSystem=function(){var c=prompt("PASTE NEW CODE:");if(c&&c.length>50){localStorage.setItem('adel_engine_v1',c);alert("UPDATED! Please Restart.");location.reload()}};window.saveQ=function(txt){if(!txt||!txt.trim())return;var l=txt.split("\n").map(x=>x.trim()).filter(x=>x.length>3);if(l.length>0){queue=l;localStorage.setItem("adel_queue",JSON.stringify(queue));alert("Loaded "+l.length+" AWBs! Ready to go.");updateQBtn()}else alert("Invalid")};window.clearQ=function(){if(confirm("Clear Queue?")){queue=[];localStorage.setItem("adel_queue","[]");updateQBtn();alert("Cleared")}};var updateQBtn=function(){var b=document.getElementById('next-awb-btn');if(b){if(queue.length>0){b.innerHTML="Next ▶ ("+queue.length+")";b.style.display='flex'}else{b.style.display='none'}}};window.loadNext=function(){if(queue.length===0){alert("Queue Empty");return}var n=queue.shift();localStorage.setItem("adel_queue",JSON.stringify(queue));updateQBtn();if(n){history.push(n);if(history.length>50)history.shift()}var awb=document.getElementById("ContentPlaceHolder1_txt_AWB_I");if(awb){awb.value=n;awb.focus();setTimeout(function(){var e=new KeyboardEvent('keydown',{bubbles:true,cancelable:true,key:'Enter',keyCode:13});awb.dispatchEvent(e);},50)}};window.loadPrev=function(){if(history.length===0){alert("No Previous AWB");return}var current=history.pop();if(current)queue.unshift(current);var prev=history[history.length-1];if(!prev)prev=current;localStorage.setItem("adel_queue",JSON.stringify(queue));updateQBtn();var awb=document.getElementById("ContentPlaceHolder1_txt_AWB_I");if(awb){awb.value=prev;awb.focus();setTimeout(function(){var e=new KeyboardEvent('keydown',{bubbles:true,cancelable:true,key:'Enter',keyCode:13});awb.dispatchEvent(e);},50)}};var rec=function(d){if(!d.a)return;var n=new Date(),k=n.toLocaleDateString('en-CA'),idx=-1;for(var i=0;i<db.length;i++)if(db[i].awb===d.a&&db[i].key===k){idx=i;break}var u=n.toLocaleDateString('en-GB'),ut=n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:true});var o={drs:d.st,awb:d.a,co:d.c,prod:d.p,rec:d.r,ud:u,ut:ut,key:k};if(idx>-1)db[idx]=o;else db.push(o);localStorage.setItem("adel_db",JSON.stringify(db));window.adelCnt++;localStorage.setItem("adel_count",window.adelCnt);document.getElementById("cnt-badge").innerText=window.adelCnt};window.exportCSV=function(){var sd=document.getElementById('export-date').value,c="\uFEFFDRS,AWB,Company,Product,RecDate,Upd\n",n=0;db.forEach(function(r){if(r.key===sd){var clDrs=(r.drs||"").replace(/^[\d\W_]+/,'').trim();var clRec=(r.rec||"").split(" ")[0];c+='"'+clDrs+'","'+(r.awb||"")+'","'+(r.co||"")+'","'+(r.prod||"-")+'","'+clRec+'","'+(r.ud||"")+'"\n';n++}});if(n>0){var l=document.createElement("a");l.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));l.download="Adel_"+sd+".csv";l.click()}else alert("No Data")};window.drawPanel=function(){var d=document.createElement("div");d.id="adel-panel";d.tabIndex="-1";var lH="<div id='login-view'><h1 style='font-family:\"Times New Roman\",serif;font-style:italic;font-size:55px;color:#fff;text-shadow:0 0 20px #0ea5e9;margin-bottom:30px;font-weight:bold'>Sky Bag</h1><input type='password' id='pass-inp' class='pass-inp' placeholder='PASSCODE'><button id='ul-btn' class='unlock-btn'>LOGIN</button><div id='e-msg' style='color:#ef4444;font-size:11px;margin-top:20px;font-weight:700'></div></div>";var aH="<div id='app-view' style='display:none;flex-direction:column;height:100%'><div class='app-header'><div class='brand'>⚡ ADEL</div><div class='tools'><span class='counter-box' id='cnt-badge'>"+window.adelCnt+"</span><button class='icon-btn trash' onclick='clearDB()' title='History'>🗑</button><button class='icon-btn' onclick='resetCnt()' title='Reset'>🔄</button><button class='icon-btn' onclick='toggleSet()' title='Settings'>⚙</button></div></div><div class='app-body'><div id='main-view' class='sub-view' style='display:block'><div class='mode-list' id='mode-list'></div><button id='next-awb-btn' class='next-btn' onclick='loadNext()' style='display:none'>Next ▶</button><div class='footer-bar'><input type='date' id='export-date' class='date-inp' value='"+todayKey+"'><button onclick='exportCSV()' class='save-btn'>💾</button></div></div><div id='set-view' class='sub-view'><div class='view-title'>SETTINGS</div><div class='set-card'><div class='set-head'>DATA MANAGEMENT</div><div class='mode-list'><div class='mode-btn' onclick='showDbImport()'><span class='mode-icon'>📂</span>Import Database</div><div class='mode-btn' onclick='showHols()'><span class='mode-icon'>📅</span>Holiday Manager</div><div class='mode-btn' onclick='window.clearQ()'><span class='mode-icon'>❌</span>Clear Queue</div></div></div><div class='set-card'><div class='set-head'>SYSTEM</div><div class='mode-list'><div class='mode-btn' onclick='updateSystem()' style='border:1px solid rgba(14,165,233,0.3);color:var(--accent)'><span class='mode-icon'>♻%EF%B8%8F</span>Update System</div></div></div><div class='back-btn' onclick='showMain()'>← Return to Main</div></div><div id='db-view' class='sub-view'><div class='view-title'>DATA IMPORT</div><textarea id='db-input' class='db-area' placeholder='Paste Excel: Acc | Prod | Name'></textarea><button class='primary-btn' onclick='window.saveDb()'>SAVE DATA</button><button class='wipe-btn' onclick='window.wipeDb()'>⚠ Wipe Data</button><button class='back-btn' onclick='toggleSet()'>Cancel</button></div><div id='hol-view' class='sub-view'><div class='view-title'>HOLIDAYS</div><div class='footer-bar' style='margin:0 0 15px 0;background:rgba(0,0,0,0.3)'><input id='new-hol' class='date-inp' placeholder='e.g. 29/1' style='text-align:left;padding-left:15px'><button onclick='addHol()' class='save-btn' style='width:35px;height:30px;font-size:18px'>+</button></div><div id='hol-list' style='max-height:120px;overflow-y:auto;padding-right:5px;margin-top:15px'></div><button class='back-btn' onclick='toggleSet()'>Back</button></div><div class='hint'>[%60] NEXT • [F1] UNDO • [ESC] CLOSE<div style='margin-top:8px;color:var(--accent);font-weight:800;letter-spacing:2px'>© ENG ADEL 2026</div></div></div></div>";d.innerHTML=lH+aH;var cObj=d.querySelector("#mode-list");var navs=[];modes.forEach(function(m,i){var b=document.createElement("div");b.className="mode-btn";b.innerHTML="<span class='mode-icon'>"+m.i+"</span>"+m.t;b.onclick=function(){setM(m.v,"")};cObj.appendChild(b);navs.push(b)});document.body.appendChild(d);window.checkPass=function(){var i=document.getElementById('pass-inp');if(i.value===MyPass){window.adelLogged=true;document.getElementById('login-view').style.display='none';document.getElementById('app-view').style.display='flex';d.focus();updateQBtn()}else{document.getElementById('e-msg').innerText="INCORRECT";i.style.borderColor=css.danger}};document.getElementById('ul-btn').onclick=window.checkPass;document.getElementById('pass-inp').onkeydown=function(e){if(e.key==='Enter')window.checkPass()};var c=0;var vis=function(v,n){document.querySelectorAll('.sub-view').forEach(function(e){e.style.display='none'});document.getElementById(v).style.display='block';if(n)navs=n;c=0;upd(0);d.focus()};var upd=function(i){navs.forEach(function(x,n){if(n===i)x.classList.add('active');else x.classList.remove('active')})};window.showMain=function(){vis('main-view',Array.from(document.querySelectorAll('#mode-list .mode-btn')))};window.toggleSet=function(){vis('set-view',Array.from(document.querySelectorAll('#set-view .mode-btn')))};window.showDbImport=function(){vis('db-view',[document.querySelector('#db-view .primary-btn')]);document.getElementById('db-input').focus()};window.showQ=function(){vis('q-view',[document.querySelector('#q-view .primary-btn')]);document.getElementById('q-input').focus()};window.showHols=function(){renderHols();vis('hol-view',[document.querySelector('#hol-view .save-btn')])};var renderHols=function(){var l=document.getElementById('hol-list');l.innerHTML='';if(holidays.length===0)l.innerHTML="<div style='text-align:center;font-size:11px;color:#94a3b8;padding:5px;'>No Data</div>";holidays.forEach(function(h,i){var r=document.createElement('div');r.style.cssText="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);margin-bottom:6px;border-radius:8px;font-size:12px;align-items:center;border:1px solid rgba(255,255,255,0.05)";r.innerHTML="<span>"+h+"</span><span style='color:#f43f5e;cursor:pointer;font-weight:bold' onclick='delHol("+i+")'>×</span>";l.appendChild(r)})};window.addHol=function(){var v=document.getElementById('new-hol').value;if(v){holidays.push(v);localStorage.setItem('adel_holidays',JSON.stringify(holidays));document.getElementById('new-hol').value='';renderHols()}};window.delHol=function(i){holidays.splice(i,1);localStorage.setItem('adel_holidays',JSON.stringify(holidays));renderHols()};window.setM=function(m,s){window.adelMode=m;window.adelSub=s;window.toggleAdel();if(m==="bank"&&!window.bankDate){var t=new Date();var def=t.getDate()+"/"+(t.getMonth()+1);var pr=prompt("Date:",def);if(pr)window.bankDate=pr}var t=document.getElementById("ContentPlaceHolder1_txt_AWB_I");if(t)t.focus()};navs=Array.from(document.querySelectorAll('#mode-list .mode-btn'));upd(0);d.onkeydown=function(e){if(!window.adelLogged)return;if(e.key==="Backspace"){e.preventDefault();window.showMain();return}if(e.key==="ArrowDown"){e.preventDefault();c=(c+1)%navs.length;upd(c)}else if(e.key==="ArrowUp"){e.preventDefault();c=(c-1+navs.length)%navs.length;upd(c)}else if(e.key==="Enter"){e.preventDefault();if(navs[c])navs[c].click()}}};window.drawPanel();setTimeout(function(){var p=document.getElementById('adel-panel');if(p){p.style.display='block';setTimeout(function(){p.style.opacity='1';p.style.transform='scale(1)'},10);document.getElementById('pass-inp').focus()}},50);var updatePick=function(){if(!ps||!ps.o)return;ps.o.forEach(function(b,i){if(i===ps.i)b.classList.add('sel');else b.classList.remove('sel')})};var showPicker=function(n,c,cb){if(document.getElementById('adel-picker'))return;var d=document.createElement("div");d.id="adel-picker";d.tabIndex="-1";d.innerHTML="<div style='color:#0ea5e9;font-weight:900;margin-bottom:15px;font-size:12px;letter-spacing:2px'>SELECT NAME</div>";var opts=[];n.forEach(function(name){var b=document.createElement("div");b.className="pick-opt";b.innerText=name;b.onclick=function(){c.SetValue(name);d.remove();ps=null;cb()};d.appendChild(b);opts.push(b)});document.body.appendChild(d);ps={i:0,o:opts,n:n,c:c,cb:cb,el:d};updatePick()};window.addEventListener("keydown",function(e){if(e.key==="Delete"){if(e.target&&e.target.id==="db-input")return;window.toggleAdel()}},true);document.addEventListener("keydown",function(e){if(e.key==="%60"||e.code==="Backquote"||e.code==="IntlBackslash"){e.preventDefault();window.loadNext();return}if(e.key==="F1"){e.preventDefault();window.loadPrev();return}if(ps){e.preventDefault();e.stopPropagation();var l=ps.o.length;if(e.key==="ArrowDown"){ps.i=(ps.i+1)%l;updatePick()}else if(e.key==="ArrowUp"){ps.i=(ps.i-1+l)%l;updatePick()}else if(e.key==="Enter"){ps.c.SetValue(ps.n[ps.i]);ps.el.remove();var cb=ps.cb;ps=null;cb()}else if(e.key==="Escape"){ps.el.remove();ps=null}return}if(e.key==="Escape"){var p=document.getElementById('adel-panel');if(p&&p.style.display!=='none'){e.preventDefault();window.toggleAdel();return}}if(!window.adelLogged)return;if(e.key==="Enter"){var el=document.activeElement;if(!el)return;if(el.id.indexOf("txt_AWB")>-1)setTimeout(function(){doEdit=true},100);var m=window.adelMode;var id=el.id;if((m==="14"||m==="5")&&id.indexOf("DXEditor3")>-1||m==="bank"&&id.indexOf("DXEditor8")>-1){e.preventDefault();el.blur();var g=ASPx.GetControlCollection().Get("ContentPlaceHolder1_ASPxGridView1");if(g)g.UpdateEdit()}}if(e.key==="Alt"){var el=document.activeElement;if(el&&el.id.indexOf("txt_AWB")>-1)return;e.preventDefault();try{var m=window.adelMode;var get=function(id){return ASPx.GetControlCollection().Get("ContentPlaceHolder1_ASPxGridView1_DXEFL_"+id)};var tds=document.getElementsByTagName("td"),raw="";for(var i=0;i<tds.length;i++)if(tds[i].innerText.trim()==="Receiver Name"){var r=tds[i].parentElement.nextElementSibling;if(r)raw=r.cells[tds[i].cellIndex].innerText.trim();break}var cd=get("DXEditor6"),cs=get("DXEditor4"),cn=get("DXEditor2");if(m==="man"){var d=new Date(),n=new Date();n.setHours(0,0,0,0);for(var i=0;i<tds.length;i++){if(tds[i].innerText.trim()==="Bill Date"){var r=tds[i].parentElement.nextElementSibling;if(r){var t=r.cells[tds[i].cellIndex].innerText.trim();if(t.indexOf("/")>-1){var s=t.split("/");var bdt=new Date(s[2],s[0]-1,s[1]);var ld=new Date(bdt);ld.setDate(ld.getDate()+14);ld.setHours(0,0,0,0);d=(ld>n)?n:ld}}break}}d=checkDate(d,m);if(cd)cd.SetDate(d);if(cn)cn.SetValue("");var inp=document.getElementById("ContentPlaceHolder1_ASPxGridView1_DXEFL_DXEditor4_I");if(cs&&inp){cs.SetFocus();setTimeout(function(){inp.focus();inp.select()},50);inp.onkeydown=function(ev){if(ev.key==="Enter"){ev.preventDefault();inp.blur();setTimeout(function(){var g=ASPx.GetControlCollection().Get("ContentPlaceHolder1_ASPxGridView1");if(g)g.UpdateEdit()},200)}}}}else{var next=function(){var cr=get("DXEditor5");if(cr){cr.SetFocus();if(cr.ShowDropDown)cr.ShowDropDown();cr.SelectedIndexChanged.ClearHandlers();cr.SelectedIndexChanged.AddHandler(function(){setTimeout(function(){var tid=(m==="bank")?"DXEditor8":"DXEditor3";var el=document.getElementById("ContentPlaceHolder1_ASPxGridView1_DXEFL_"+tid+"_I");if(el){el.focus();el.select();if(m!=="bank"){el.onkeyup=function(){var v=el.value,ok=(v.length===14&&(v.startsWith("2")||v.startsWith("3")));el.style.backgroundColor=ok?"#dcfce7":"#fee2e2";el.style.color="#000"}}}},100)})}};if(m==="bank"){if(!window.bankDate){var p=prompt("Date?");if(p)window.bankDate=p}if(window.bankDate){var p=window.bankDate.split("/");var d=new Date();d.setHours(0,0,0,0);d.setDate(parseInt(p[0]));d.setMonth(parseInt(p[1])-1);if(p[2])d.setFullYear(parseInt(p[2]));d=checkDate(d,m);if(cd)cd.SetDate(d)}if(cs)cs.SetValue(6);if(cn)cn.SetValue("Bank Stamp");if(cn)cn.SetFocus();next()}else{var n=new Date();n.setHours(0,0,0,0);var y=new Date(n);y.setDate(n.getDate()-1);var billDate=new Date();var found=false;for(var i=0;i<tds.length;i++){if(tds[i].innerText.trim()==="Bill Date"){var r=tds[i].parentElement.nextElementSibling;if(r){var t=r.cells[tds[i].cellIndex].innerText.trim().split("/");if(t.length>1){billDate=new Date(t[2],t[0]-1,t[1]);found=true}}break}}if(found){var add=(m==="5")?5:14;var target=new Date(billDate);target.setDate(target.getDate()+add);if(target>=n)target=y;target=checkDate(target,m);if(cd)cd.SetDate(target)}if(cs)cs.SetValue(6);if(cn){cn.SetFocus();if(/[a-zA-Z]/.test(raw))raw=raw.replace(/[\u0600-\u06FF]/g,'').replace(/\s+/g,' ').trim();var p=raw.split(/[:;,\-|\/\*&+]|\bOR\b|\bAND\b/i).map(x=>x.replace(/[\u0600-\u06FF]/g,'').replace(/\s+/g,' ').trim()).filter(x=>x.length>1);var he=p.some(n=>/[a-zA-Z]/.test(n));if(he)p=p.filter(n=>/[a-zA-Z]/.test(n));if(p.length>1)showPicker(p,cn,next);else{cn.SetValue(p[0]||raw);next()}}}}}catch(e){}}},true);setInterval(function(){try{var awb=document.getElementById("ContentPlaceHolder1_txt_AWB_I");if(awb&&!awb.hasPasted){awb.hasPasted=true;awb.addEventListener("paste",function(e){var t=(e.clipboardData||window.clipboardData).getData('text');if(t&&t.indexOf("\n")>-1){e.preventDefault();window.saveQ(t)}})}var st=document.getElementById("ContentPlaceHolder1_ASPxGridView1_DXEFL_DXEditor4_I");var dt=document.getElementById("ContentPlaceHolder1_ASPxGridView1_DXEFL_DXEditor6_I");if(st&&st.value)window.lastValidSt=st.value;if(dt&&dt.value)window.lastValidDt=dt.value;if(awb&&awb.value.length>3)window.lastSeenAWB=awb.value;if(accDb&&window.lastSeenAWB){try{var tds=document.getElementsByTagName("td");for(var i=0;i<tds.length;i++){var txt=tds[i].innerText.trim();if(txt.indexOf("Acc")>-1||txt.indexOf("No")>-1){var match=txt.match(/\d{4,}/);var num=match?match[0]:null;if(!num){var r=tds[i].parentElement.nextElementSibling;if(r){var belowCell=r.cells[tds[i].cellIndex];if(belowCell){var txt2=belowCell.innerText.trim();var m2=txt2.match(/\d{4,}/);if(m2)num=m2[0]}}}if(num&&accDb[num]){window.adelSub=accDb[num].n;window.adelProd=accDb[num].p;break}}}}catch(e){}}if(doEdit){var b=document.getElementById("ContentPlaceHolder1_ASPxGridView1_DXCBtn0_I");if(b&&b.offsetParent!==null){b.click();doEdit=false}}var pm=ASPx.GetControlCollection().Get("ContentPlaceHolder1_popMsg");if(pm&&pm.IsVisible()){var t="";try{t=pm.GetMainElement().innerText.toUpperCase()}catch(x){}pm.Hide();if(t.indexOf("ERR")===-1&&t.indexOf("FAIL")===-1&&t.indexOf("خطأ")===-1){if(window.lastSeenAWB){var finalSt=window.lastValidSt||"Unknown";finalSt=finalSt.replace(/^[;\s]+/,"").trim();var finalDt=window.lastValidDt||window.bankDate||"";var cn=window.adelSub||(window.adelMode==="5"?"Wafa":(window.adelMode==="man"?"Returns":"-"));rec({st:finalSt,a:window.lastSeenAWB,c:cn,p:window.adelProd,r:finalDt});window.adelSub="";window.adelProd="";window.lastValidSt="";window.lastValidDt=""}}if(awb){awb.focus();awb.select()}setTimeout(function(){if(awb){awb.focus();awb.select()}},100)}}catch(e){}},100)}catch(e){alert("Error:"+e)}})();
     }
-
-    // 2. رابط التحكم المركزي (Firebase Link)
-    const dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemConfig.json";
-
-    // جلب الإعدادات من الداشبورد قبل أي شيء
-    fetch(dbUrl).then(r => r.json()).then(config => {
-        
-        // فحص مفتاح التشغيل الرئيسي
-        if (config.security && !config.security.masterSwitch) {
-            alert(config.announcement || "⚠️ النظام متوقف حالياً للصيانة.");
-            return;
-        }
-
-        // الكود الأساسي يبدأ من هنا
-        var v = localStorage.getItem('adel_engine_v1');
-        if (v) { try { eval(v); return } catch (e) { console.log('Update Error') } }
-
-        window.toggleAdel = function() {
-            var p = document.getElementById('adel-panel');
-            if (!p) { if (window.drawPanel) window.drawPanel(); return }
-            var h = (p.style.display === 'none' || p.style.opacity === '0');
-            if (h) {
-                p.style.display = 'block';
-                requestAnimationFrame(function() {
-                    p.style.opacity = '1';
-                    p.style.transform = 'translateY(0) scale(1)';
-                });
-                if (window.adelLogged) p.focus();
-                else { var pi = document.getElementById('pass-inp'); if (pi) { pi.value = ''; pi.focus() } }
-            } else {
-                p.style.opacity = '0';
-                p.style.transform = 'translateY(15px) scale(0.95)';
-                setTimeout(function() { p.style.display = 'none' }, 250);
-            }
-        };
-
-        if (window.adelLoaded) { window.toggleAdel(); return }
-        window.adelLoaded = true;
-
-        // الإعدادات الافتراضية
-        var MyPass = config.security.password || "02026";
-        var holidays = config.blockedDates || [];
-        var todayKey = new Date().toLocaleDateString('en-CA');
-
-        window.adelCnt = parseInt(localStorage.getItem("adel_count") || 0);
-        window.adelLogged = false;
-        window.adelMode = "14";
-
-        var modes = [
-            { t: "POD", v: "14", i: "📄" },
-            { t: "Wafa", v: "5", i: "📃" },
-            { t: "Bank", v: "bank", i: "🏦" },
-            { t: "Returns", v: "man", i: "📦" }
-        ];
-
-        // CSS التصميم
-        var css = ":root{--bg-glass:rgba(15,23,42,0.95);--border-glass:rgba(56,189,248,0.25);--accent:#0ea5e9;--text-main:#f1f5f9}#adel-panel{position:fixed;top:30px;right:30px;width:300px;background:var(--bg-glass);backdrop-filter:blur(25px);border:1px solid var(--border-glass);border-radius:24px;z-index:2147483647;color:var(--text-main);box-shadow:0 30px 60px rgba(0,0,0,0.8);display:none;flex-direction:column;opacity:0;transform:scale(0.95)}.pass-inp{width:80%;padding:12px;margin:20px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:white;text-align:center}.unlock-btn{padding:10px 25px;border-radius:20px;background:var(--accent);color:white;border:none;cursor:pointer}.app-header{padding:15px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between}.mode-btn{padding:12px;margin:5px 15px;background:rgba(255,255,255,0.05);border-radius:12px;cursor:pointer;display:flex;align-items:center}.mode-btn:hover{background:rgba(255,255,255,0.1)}";
-        var s = document.createElement("style"); s.innerHTML = css; document.head.appendChild(s);
-
-        // Logic فحص التواريخ الممنوعة والويك إند
-        var checkDate = function(d, m) {
-            while (true) {
-                var day = d.getDay();
-                var ds = d.toISOString().split('T')[0];
-                var isBlocked = holidays.includes(ds);
-                
-                // لو جمعة أو تاريخ ممنوع من الأدمن -> ارجع يوم
-                if (day === 5 || isBlocked) {
-                    d.setDate(d.getDate() - 1);
-                } else {
-                    break;
-                }
-            }
-            return d;
-        };
-
-        window.drawPanel = function() {
-            var d = document.createElement("div");
-            d.id = "adel-panel";
-            var lH = "<div id='login-view' style='text-align:center;padding:40px'><h2>Sky Bag</h2><input type='password' id='pass-inp' class='pass-inp' placeholder='PASSCODE'><br><button id='ul-btn' class='unlock-btn'>LOGIN</button></div>";
-            var aH = "<div id='app-view' style='display:none;flex-direction:column'><div class='app-header'><div class='brand'>⚡ ADEL</div><span id='cnt-badge'>"+window.adelCnt+"</span></div><div id='mode-list' style='padding:15px 0'></div></div>";
-            d.innerHTML = lH + aH;
-            
-            document.body.appendChild(d);
-
-            document.getElementById('ul-btn').onclick = function() {
-                if (document.getElementById('pass-inp').value === MyPass) {
-                    window.adelLogged = true;
-                    document.getElementById('login-view').style.display = 'none';
-                    document.getElementById('app-view').style.display = 'flex';
-                    if (config.announcement) alert("📢 " + config.announcement);
-                } else { alert("WRONG PASS"); }
-            };
-
-            modes.forEach(function(m) {
-                var b = document.createElement("div");
-                b.className = "mode-btn";
-                b.innerHTML = "<span>"+m.i+"</span> " + m.t;
-                b.onclick = function() {
-                    window.adelMode = m.v;
-                    window.toggleAdel();
-                    alert("Selected: " + m.t);
-                };
-                document.getElementById('mode-list').appendChild(b);
-            });
-        };
-
-        window.drawPanel();
-
-        // الـ Logic بتاع Alt اللي بيقفل التواريخ
-        document.addEventListener("keydown", function(e) {
-            if (e.key === "Alt" && window.adelLogged) {
-                e.preventDefault();
-                
-                // جلب الـ Bill Date من السيستم (كمثال)
-                var billDate = new Date(); // هنا المفروض كود سحب التاريخ من الصفحة
-                var n = new Date(); n.setHours(0,0,0,0);
-                var yesterday = new Date(n); yesterday.setDate(n.getDate() - 1);
-
-                // تحديد عدد الأيام بناءً على النوع من الفايربيز
-                var addDays = 14;
-                if (window.adelMode === "5") addDays = config.wafa.days;
-                else if (window.adelMode === "14") addDays = config.pod.days;
-                else if (window.adelMode === "man") addDays = config.returns.days;
-
-                var target = new Date(billDate);
-                target.setDate(target.getDate() + addDays);
-
-                // لو التاريخ في المستقبل يرجع لإمبارح
-                if (target > n) target = yesterday;
-
-                // فحص الويك إند والتواريخ الممنوعة
-                target = checkDate(target, window.adelMode);
-
-                console.log("Final Date Calculation: " + target.toISOString().split('T')[0]);
-                alert("التاريخ المقترح: " + target.toLocaleDateString('en-GB'));
-                
-                // هنا بتضيف كود الـ SetDate للخانة في السيستم
-            }
-        }, true);
-
-    }).catch(err => {
-        console.error("Firebase Connection Failed");
-    });
 })();
