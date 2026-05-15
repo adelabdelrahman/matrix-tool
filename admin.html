@@ -357,11 +357,15 @@
                 isActive: powerSwitch.checked,
                 password: passInput.value,
                 holidays: currentHolidays,
-                blockedDevices: blockedDevices
+                blockedDevices: blockedDevices,
+                adminKey: 'Adel_Matrix_2026' 
             };
             fetch(dbUrl, { method: 'PUT', body: JSON.stringify(config) })
-            .then(() => { if(!silent) showSystemToast("System configuration updated successfully.", "success"); })
-            .catch(() => { if(!silent) showSystemToast("Failed to connect to the server.", "error"); });
+            .then(response => {
+                if(!response.ok) throw new Error("Unauthorized");
+                if(!silent) showSystemToast("تم نشر التعديلات بنجاح على جميع الأجهزة!", "success"); 
+            })
+            .catch(() => { if(!silent) showSystemToast("تم رفض التعديل! تأكد من صلاحيات الفايربيس.", "error"); });
         }
     </script>
 </body>
