@@ -17,7 +17,7 @@
         })
         .then(function (data) {
             var isActive = true;
-            var dynamicPass = "02026"; // الباسورد الافتراضي
+            var dynamicPass = "02026";
 
             if (data !== null) {
                 if (typeof data === 'boolean') {
@@ -36,7 +36,6 @@
             runAdelEngine(dynamicPass);
         })
         .catch(function (error) {
-            // تشغيل الأداة حتى لو النت فصل لتجنب توقف العمل
             runAdelEngine("02026");
         });
 
@@ -94,7 +93,6 @@
         window.adelLoaded = true;
 
         try {
-            // المتغيرات الأساسية للسيستم
             var MyPass = serverPassword;
             var ps = null;
             var doEdit = false;
@@ -104,7 +102,6 @@
             var queue = [];
             var history = [];
 
-            // استدعاء البيانات المحفوظة في المتصفح
             try { accDb = JSON.parse(localStorage.getItem("adel_acc_db") || "{}"); } catch (e) { }
             try { queue = JSON.parse(localStorage.getItem("adel_queue") || "[]"); } catch (e) { }
 
@@ -173,37 +170,6 @@
                 return d;
             };
 
-            window.saveDb = function () {
-                var t = document.getElementById('db-input').value;
-                if (!t.trim()) { alert("Empty"); return; }
-                var l = t.split("\n"), c = 0, n = {};
-                l.forEach(function (x) {
-                    var p = x.split("\t");
-                    if (p.length >= 3) {
-                        n[p[0].trim()] = { p: p[1].trim(), n: p[2].trim() };
-                        c++;
-                    }
-                });
-                if (c > 0) {
-                    localStorage.setItem("adel_acc_db", JSON.stringify(n));
-                    accDb = n;
-                    alert("Saved " + c);
-                    document.getElementById('db-input').value = "";
-                    window.showMain();
-                } else {
-                    alert("Invalid");
-                }
-            };
-
-            window.wipeDb = function () {
-                if (Object.keys(accDb).length === 0) { alert("Empty"); return; }
-                if (confirm("Wipe?")) {
-                    localStorage.removeItem("adel_acc_db");
-                    accDb = {};
-                    alert("Wiped");
-                }
-            };
-
             window.resetCnt = function () {
                 if (confirm("Reset?")) {
                     window.adelCnt = 0;
@@ -217,15 +183,6 @@
                     db = [];
                     localStorage.setItem("adel_db", "[]");
                     alert("Cleared");
-                }
-            };
-
-            window.updateSystem = function () {
-                var c = prompt("PASTE NEW CODE:");
-                if (c && c.length > 50) {
-                    localStorage.setItem('adel_engine_v1', c);
-                    alert("UPDATED! Please Restart.");
-                    location.reload();
                 }
             };
 
@@ -326,28 +283,6 @@
                 document.getElementById("cnt-badge").innerText = window.adelCnt;
             };
 
-            window.exportCSV = function () {
-                var sd = document.getElementById('export-date').value;
-                var c = "\uFEFFDRS,AWB,Company,Product,RecDate,Upd\n";
-                var n = 0;
-                db.forEach(function (r) {
-                    if (r.key === sd) {
-                        var clDrs = (r.drs || "").replace(/^[\d\W_]+/, '').trim();
-                        var clRec = (r.rec || "").split(" ")[0];
-                        c += '"' + clDrs + '","' + (r.awb || "") + '","' + (r.co || "") + '","' + (r.prod || "-") + '","' + clRec + '","' + (r.ud || "") + '"\n';
-                        n++;
-                    }
-                });
-                if (n > 0) {
-                    var l = document.createElement("a");
-                    l.href = URL.createObjectURL(new Blob([c], { type: 'text/csv' }));
-                    l.download = "Adel_" + sd + ".csv";
-                    l.click();
-                } else {
-                    alert("No Data");
-                }
-            };
-
             // =========================================================================
             // القسم الخامس: رسم واجهة المستخدم (Panel) والتنقل بين الصفحات
             // =========================================================================
@@ -357,7 +292,7 @@
                 d.tabIndex = "-1";
                 
                 var lH = "<div id='login-view'><h1 style='font-family:\"Times New Roman\",serif;font-style:italic;font-size:55px;color:#fff;text-shadow:0 0 20px #0ea5e9;margin-bottom:30px;font-weight:bold'>Sky Bag</h1><input type='password' id='pass-inp' class='pass-inp' placeholder='PASSCODE'><button id='ul-btn' class='unlock-btn'>LOGIN</button><div id='e-msg' style='color:#ef4444;font-size:11px;margin-top:20px;font-weight:700'></div></div>";
-                var aH = "<div id='app-view' style='display:none;flex-direction:column;height:100%'><div class='app-header'><div class='brand'>⚡ ADEL</div><div class='tools'><span class='counter-box' id='cnt-badge'>" + window.adelCnt + "</span><button class='icon-btn trash' onclick='clearDB()' title='History'>🗑</button><button class='icon-btn' onclick='resetCnt()' title='Reset'>🔄</button><button class='icon-btn' onclick='toggleSet()' title='Settings'>⚙</button></div></div><div class='app-body'><div id='main-view' class='sub-view' style='display:block'><div class='mode-list' id='mode-list'></div><button id='next-awb-btn' class='next-btn' onclick='loadNext()' style='display:none'>Next ▶</button><div class='footer-bar'><input type='date' id='export-date' class='date-inp' value='" + todayKey + "'><button onclick='exportCSV()' class='save-btn'>💾</button></div></div><div id='set-view' class='sub-view'><div class='view-title'>SETTINGS</div><div class='set-card'><div class='set-head'>DATA MANAGEMENT</div><div class='mode-list'><div class='mode-btn' onclick='showDbImport()'><span class='mode-icon'>📂</span>Import Database</div><div class='mode-btn' onclick='showHols()'><span class='mode-icon'>📅</span>Holiday Manager</div><div class='mode-btn' onclick='window.clearQ()'><span class='mode-icon'>❌</span>Clear Queue</div></div></div><div class='set-card'><div class='set-head'>SYSTEM</div><div class='mode-list'><div class='mode-btn' onclick='updateSystem()' style='border:1px solid rgba(14,165,233,0.3);color:var(--accent)'><span class='mode-icon'>♻️</span>Update System</div></div></div><div class='back-btn' onclick='showMain()'>← Return to Main</div></div><div id='db-view' class='sub-view'><div class='view-title'>DATA IMPORT</div><textarea id='db-input' class='db-area' placeholder='Paste Excel: Acc | Prod | Name'></textarea><button class='primary-btn' onclick='window.saveDb()'>SAVE DATA</button><button class='wipe-btn' onclick='window.wipeDb()'>⚠ Wipe Data</button><button class='back-btn' onclick='toggleSet()'>Cancel</button></div><div id='hol-view' class='sub-view'><div class='view-title'>HOLIDAYS</div><div class='footer-bar' style='margin:0 0 15px 0;background:rgba(0,0,0,0.3)'><input id='new-hol' class='date-inp' placeholder='e.g. 29/1' style='text-align:left;padding-left:15px'><button onclick='addHol()' class='save-btn' style='width:35px;height:30px;font-size:18px'>+</button></div><div id='hol-list' style='max-height:120px;overflow-y:auto;padding-right:5px;margin-top:15px'></div><button class='back-btn' onclick='toggleSet()'>Back</button></div><div class='hint'>[`] NEXT • [F1] UNDO • [ESC] CLOSE<div style='margin-top:8px;color:var(--accent);font-weight:800;letter-spacing:2px'>© ENG ADEL 2026</div></div></div></div>";
+                var aH = "<div id='app-view' style='display:none;flex-direction:column;height:100%'><div class='app-header'><div class='brand'>⚡ ADEL</div><div class='tools'><span class='counter-box' id='cnt-badge'>" + window.adelCnt + "</span><button class='icon-btn trash' onclick='clearDB()' title='History'>🗑</button><button class='icon-btn' onclick='resetCnt()' title='Reset'>🔄</button><button class='icon-btn' onclick='toggleSet()' title='Settings'>⚙</button></div></div><div class='app-body'><div id='main-view' class='sub-view' style='display:block'><div class='mode-list' id='mode-list'></div><button id='next-awb-btn' class='next-btn' onclick='loadNext()' style='display:none'>Next ▶</button></div><div id='set-view' class='sub-view'><div class='view-title'>SETTINGS</div><div class='set-card'><div class='set-head'>DATA MANAGEMENT</div><div class='mode-list'><div class='mode-btn' onclick='showHols()'><span class='mode-icon'>📅</span>Holiday Manager</div></div></div><div class='back-btn' onclick='showMain()'>← Return to Main</div></div><div id='hol-view' class='sub-view'><div class='view-title'>HOLIDAYS</div><div class='footer-bar' style='margin:0 0 15px 0;background:rgba(0,0,0,0.3)'><input id='new-hol' class='date-inp' placeholder='e.g. 29/1' style='text-align:left;padding-left:15px'><button onclick='addHol()' class='save-btn' style='width:35px;height:30px;font-size:18px'>+</button></div><div id='hol-list' style='max-height:120px;overflow-y:auto;padding-right:5px;margin-top:15px'></div><button class='back-btn' onclick='toggleSet()'>Back</button></div><div class='hint'>[`] NEXT • [F1] UNDO • [ESC] CLOSE<div style='margin-top:8px;color:var(--accent);font-weight:800;letter-spacing:2px'>© ENG ADEL 2026</div></div></div></div>";
                 
                 d.innerHTML = lH + aH;
                 var cObj = d.querySelector("#mode-list");
@@ -412,8 +347,6 @@
 
                 window.showMain = function () { vis('main-view', Array.from(document.querySelectorAll('#mode-list .mode-btn'))); };
                 window.toggleSet = function () { vis('set-view', Array.from(document.querySelectorAll('#set-view .mode-btn'))); };
-                window.showDbImport = function () { vis('db-view', [document.querySelector('#db-view .primary-btn')]); document.getElementById('db-input').focus(); };
-                window.showQ = function () { vis('q-view', [document.querySelector('#q-view .primary-btn')]); document.getElementById('q-input').focus(); };
                 window.showHols = function () { renderHols(); vis('hol-view', [document.querySelector('#hol-view .save-btn')]); };
 
                 var renderHols = function () {
