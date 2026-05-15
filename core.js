@@ -9,16 +9,23 @@
         return;
     }
 
-    // دالة إنشاء صندوق الرسائل الأنيق
+    // دالة إنشاء صندوق الرسائل الأنيق (بالتصميم الجديد المتوسطن)
     function showBlockedMessage() {
         if (document.getElementById('adel-blocked-msg')) return;
         var msg = document.createElement('div');
         msg.id = 'adel-blocked-msg';
-        msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:rgba(15,23,42,0.95);border:1px solid #ef4444;border-radius:15px;padding:30px;color:#fff;font-family:'Segoe UI',sans-serif;z-index:2147483647;box-shadow:0 10px 40px rgba(0,0,0,0.9);text-align:center;min-width:280px;animation:adelFadeIn 0.3s ease;backdrop-filter:blur(10px);";
-        msg.innerHTML = "<div style='font-size:45px;margin-bottom:15px'>🛑</div><div style='font-size:18px;font-weight:bold;color:#f87171;margin-bottom:20px;letter-spacing:1px'>عفوا تم ايقاف الـ Tool</div><button onclick='this.parentElement.remove()' style='background:#ef4444;color:#fff;border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;width:100%;font-size:14px;'>إغلاق</button>";
+        msg.dir = "rtl"; // إجبار التوسيط العربي
+        msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:rgba(15,23,42,0.92);border:1px solid rgba(239,68,68,0.4);border-radius:20px;padding:35px 25px;color:#fff;font-family:'Segoe UI',sans-serif;z-index:2147483647;box-shadow:0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(239,68,68,0.1);min-width:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;backdrop-filter:blur(15px);animation:adelPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);";
+        
+        msg.innerHTML = `
+            <div style='font-size:50px; margin-bottom:15px; text-shadow: 0 0 20px rgba(239,68,68,0.6);'>⚠️</div>
+            <div style='font-size:22px; font-weight:900; color:#f87171; margin-bottom:10px; letter-spacing:1px;'>عفواً تم إيقاف الـ Tool</div>
+            <div style='font-size:13px; color:#94a3b8; margin-bottom:25px; font-weight:600;'>يرجى الانتظار لحين الانتهاء من التحديثات</div>
+            <button onclick='this.parentElement.remove()' id='adel-close-btn' style='background:linear-gradient(135deg, #ef4444, #dc2626); color:#fff; border:none; padding:12px 35px; border-radius:30px; cursor:pointer; font-weight:bold; font-size:15px; box-shadow:0 5px 15px rgba(239,68,68,0.4); outline:none; transition:all 0.3s;'>إغلاق النافذة</button>
+        `;
         
         var style = document.createElement('style');
-        style.innerHTML = "@keyframes adelFadeIn { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }";
+        style.innerHTML = "@keyframes adelPopIn { 0% { opacity: 0; transform: translate(-50%, -40%) scale(0.9); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } } #adel-close-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(239,68,68,0.6); }";
         document.head.appendChild(style);
         document.body.appendChild(msg);
     }
@@ -401,7 +408,10 @@
                 upd(0);
 
                 d.onkeydown = function (e) {
-                    if (window.adelServerConfig && window.adelServerConfig.isActive === false) return;
+                    if (window.adelServerConfig && window.adelServerConfig.isActive === false) {
+                        if (e.key === "Escape" || e.key === "Delete") showBlockedMessage();
+                        return;
+                    }
                     if (!window.adelLogged) return;
                     if (e.key === "Backspace") {
                         e.preventDefault();
@@ -473,7 +483,6 @@
                 updatePick();
             };
 
-            // مراقبة مفتاح Delete 
             window.addEventListener("keydown", function (e) {
                 if (e.key === "Delete") {
                     if (window.adelServerConfig && window.adelServerConfig.isActive === false) {
@@ -485,7 +494,6 @@
                 }
             }, true);
 
-            // مراقبة مفتاح Escape والأوامر الأخرى
             document.addEventListener("keydown", function (e) {
                 if (window.adelServerConfig && window.adelServerConfig.isActive === false) {
                     if (e.key === "Escape" || e.key === "Delete") {
