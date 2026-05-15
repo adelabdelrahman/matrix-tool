@@ -29,7 +29,7 @@
 
             var p = document.getElementById('adel-panel');
             
-            // 1. التحديث اللحظي للإيقاف (لو قفلت الأداة هتقفل فوراً عند الموظف)
+            // 1. التحديث اللحظي للإيقاف (إخفاء الشاشة فوراً)
             if (window.adelServerConfig.isActive === false) {
                 if (p && p.style.display !== 'none') {
                     p.style.display = 'none';
@@ -68,7 +68,6 @@
         if (v) { try { eval(v); return; } catch (e) { console.log('Update Error'); } }
 
         window.toggleAdel = function () {
-            // منع الفتح لو الإدارة قفلتها
             if (window.adelServerConfig.isActive === false) {
                 alert("⚠️ الأداة متوقفة حالياً من قبل الإدارة.");
                 return;
@@ -141,7 +140,7 @@
             document.head.appendChild(s);
 
             // =========================================================================
-            // القسم الرابع: الدوال الأساسية (Functions) 
+            // القسم الرابع: الدوال الأساسية (Functions)
             // =========================================================================
             var checkDate = function (d, m) {
                 while (true) {
@@ -155,7 +154,6 @@
                     var s3 = s1 + "/" + yy;
                     var s4 = s2 + "/" + yy;
                     
-                    // القراءة اللحظية من السيرفر
                     var srvHols = window.adelServerConfig.hols;
                     var h = srvHols.indexOf(s1) > -1 || srvHols.indexOf(s2) > -1 || srvHols.indexOf(s3) > -1 || srvHols.indexOf(s4) > -1;
                     
@@ -313,7 +311,6 @@
 
                 window.checkPass = function () {
                     var i = document.getElementById('pass-inp');
-                    // القراءة اللحظية للباسورد
                     if (i.value === window.adelServerConfig.pass) {
                         window.adelLogged = true;
                         document.getElementById('login-view').style.display = 'none';
@@ -355,7 +352,6 @@
                     vis('hol-view', [document.querySelector('#hol-view .back-btn')]); 
                 };
 
-                // التحديث اللحظي للقائمة
                 window.renderHols = function () {
                     var l = document.getElementById('hol-list');
                     if (!l) return;
@@ -388,6 +384,7 @@
                 upd(0);
 
                 d.onkeydown = function (e) {
+                    if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; // الحظر الكامل هنا
                     if (!window.adelLogged) return;
                     if (e.key === "Backspace") {
                         e.preventDefault();
@@ -424,7 +421,7 @@
             }, 50);
 
             // =========================================================================
-            // القسم السادس: أحداث لوحة المفاتيح والـ Picker
+            // القسم السادس: أحداث لوحة المفاتيح والـ Picker (تم وضع الحظر الشامل هنا)
             // =========================================================================
             var updatePick = function () {
                 if (!ps || !ps.o) return;
@@ -460,6 +457,7 @@
             };
 
             window.addEventListener("keydown", function (e) {
+                if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; // الحظر الكامل هنا
                 if (e.key === "Delete") {
                     if (e.target && e.target.id === "db-input") return;
                     window.toggleAdel();
@@ -467,6 +465,8 @@
             }, true);
 
             document.addEventListener("keydown", function (e) {
+                if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; // الحظر الكامل للـ Alt و Enter وכל الزراير
+
                 if (e.key === "`" || e.code === "Backquote" || e.code === "IntlBackslash") {
                     e.preventDefault();
                     window.loadNext();
@@ -662,9 +662,11 @@
             }, true);
 
             // =========================================================================
-            // القسم السابع: التحديث التلقائي والمعالجة في الخلفية (Interval Loop)
+            // القسم السابع: المعالجة في الخلفية (تم وضع الحظر الشامل هنا أيضاً)
             // =========================================================================
             setInterval(function () {
+                if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; // الحظر الكامل هنا
+
                 try {
                     var awb = document.getElementById("ContentPlaceHolder1_txt_AWB_I");
                     if (awb && !awb.hasPasted) {
