@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyBag Matrix | Pro Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-panel: #151b2b;
+            --bg-card: #1c2333;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-light: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* شريط جانبي (Sidebar) */
+        .sidebar { width: 260px; background: var(--bg-panel); border-left: 1px solid var(--border-light); padding: 30px 20px; display: flex; flex-direction: column; }
+        .sidebar h2 { color: var(--accent); font-weight: 800; font-size: 24px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
+        .nav-item { padding: 15px; margin-bottom: 10px; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: 0.3s; font-weight: 700; }
+        .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--accent); border-right: 4px solid var(--accent); }
+
+        /* منطقة المحتوى */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        
+        /* شريط علوي */
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border-light); }
+        .topbar h1 { font-size: 28px; font-weight: 800; }
+        .btn-save { background: linear-gradient(135deg, var(--accent), var(--accent-hover)); color: white; border: none; padding: 14px 30px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); display: flex; align-items: center; gap: 10px; }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6); }
+
+        /* شبكة الكروت */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; }
+        .card { background: var(--bg-card); padding: 30px; border-radius: 16px; border: 1px solid var(--border-light); position: relative; overflow: hidden; }
+        .card h3 { font-size: 18px; color: white; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+
+        /* عناصر التحكم */
+        .control-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border-light); }
+        .control-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .control-label { display: flex; flex-direction: column; }
+        .control-label strong { font-size: 16px; color: var(--text-main); }
+        .control-label small { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+        input[type="number"], input[type="text"], input[type="date"], textarea { background: rgba(0,0,0,0.2); border: 1px solid var(--border-light); color: white; padding: 10px 15px; border-radius: 8px; font-size: 15px; outline: none; transition: 0.3s; }
+        input:focus, textarea:focus { border-color: var(--accent); background: rgba(59, 130, 246, 0.05); }
+        input[type="number"] { width: 80px; text-align: center; font-weight: bold; }
+
+        /* مفتاح حديث (Switch) */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); border-radius: 34px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: var(--text-muted); border-radius: 50%; transition: .4s; }
+        input:checked + .slider { background-color: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); }
+        input:checked + .slider:before { transform: translateX(24px); background-color: var(--success); }
+
+        /* قسم التواريخ */
+        .date-input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .date-input-group input { flex: 1; }
+        .btn-add { background: rgba(59, 130, 246, 0.1); color: var(--accent); border: 1px solid var(--accent); padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-add:hover { background: var(--accent); color: white; }
+        
+        .dates-container { display: flex; flex-wrap: wrap; gap: 10px; max-height: 150px; overflow-y: auto; padding-right: 5px; }
+        .date-tag { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--text-main); padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .date-tag span { color: var(--danger); cursor: pointer; font-weight: bold; }
+
+        /* إشعار الحفظ */
+        #notification { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.4); transition: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 1000; }
+        #notification.show { bottom: 40px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>⚡ Matrix Admin</h2>
+        <div class="nav-item active">لوحة التحكم الرئيسية</div>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <div>
+                <h1>إدارة قواعد النظام</h1>
+                <p style="color: var(--text-muted); margin-top: 5px;">تحكم كامل في معطيات الأداة على جميع الأجهزة لحظياً.</p>
+            </div>
+            <button class="btn-save" onclick="saveSettings()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                تطبيق الإعدادات
+            </button>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>⚙️ إعدادات العمليات (Business Logic)</h3>
+                
+                <div class="control-row">
+                    <div class="control-label">
+                        <strong>📦 POD (تسليمات)</strong>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <input type="number" id="podDays" value="14">
+                        <label class="switch"><input type="checkbox" id="podStatus" checked><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-label">
+                        <strong>🚚 Wafa (وافا)</strong>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <input type="number" id="wafaDays" value="5">
+                        <label class="switch"><input type="checkbox" id="wafaStatus" checked><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-label">
+                        <strong>↩️ Returns (المرتجعات)</strong>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <input type="number" id="returnDays" value="14">
+                        <label class="switch"><input type="checkbox" id="returnStatus" checked><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🚫 التواريخ الممنوعة (Blocklist)</h3>
+                <div class="date-input-group">
+                    <input type="date" id="newDateInput">
+                    <button class="btn-add" onclick="addDate()">إضافة</button>
+                </div>
+                <div class="dates-container" id="datesList">
+                    </div>
+            </div>
+
+            <div class="card">
+                <h3>🛡️ الأمان والتحكم (Security)</h3>
+                <div class="control-row"><strong>التشغيل الرئيسي</strong><label class="switch"><input type="checkbox" id="masterSwitch" checked><span class="slider"></span></label></div>
+                <div class="control-row"><strong>باسورد التول</strong><input type="text" id="toolPassword" value="02026" style="width: 120px; text-align: center;"></div>
+            </div>
+
+            <div class="card">
+                <h3>📢 رسالة النظام (Announcement)</h3>
+                <textarea id="sysMessage" rows="4" style="width: 100%; resize: none;" placeholder="رسالة للموظفين..."></textarea>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="notification"></div>
+
+    <script>
+        const dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemConfig.json";
+        let blockedDatesArray = [];
+
+        window.onload = async function() {
+            try {
+                let res = await fetch(dbUrl);
+                let data = await res.json();
+                if(data) {
+                    document.getElementById('podDays').value = data.pod.days;
+                    document.getElementById('podStatus').checked = data.pod.status;
+                    document.getElementById('wafaDays').value = data.wafa.days;
+                    document.getElementById('wafaStatus').checked = data.wafa.status;
+                    document.getElementById('returnDays').value = data.returns.days;
+                    document.getElementById('returnStatus').checked = data.returns.status;
+                    document.getElementById('masterSwitch').checked = data.security.masterSwitch;
+                    document.getElementById('toolPassword').value = data.security.password;
+                    document.getElementById('sysMessage').value = data.announcement || "";
+                    blockedDatesArray = data.blockedDates || [];
+                    renderDates();
+                }
+            } catch(e) {}
+        };
+
+        function addDate() {
+            let d = document.getElementById('newDateInput').value;
+            if(d && !blockedDatesArray.includes(d)) { blockedDatesArray.push(d); renderDates(); }
+        }
+
+        function removeDate(d) { blockedDatesArray = blockedDatesArray.filter(x => x !== d); renderDates(); }
+
+        function renderDates() {
+            let container = document.getElementById('datesList');
+            container.innerHTML = "";
+            blockedDatesArray.forEach(date => {
+                container.innerHTML += `<div class="date-tag">📅 ${date} <span onclick="removeDate('${date}')">✖</span></div>`;
+            });
+        }
+
+        function showNotif(msg, isError = false) {
+            let n = document.getElementById('notification');
+            n.innerText = msg;
+            n.style.background = isError ? "#ef4444" : "#10b981";
+            n.classList.add('show');
+            setTimeout(() => n.classList.remove('show'), 3000);
+        }
+
+        async function saveSettings() {
+            let config = {
+                pod: { days: parseInt(document.getElementById('podDays').value), status: document.getElementById('podStatus').checked },
+                wafa: { days: parseInt(document.getElementById('wafaDays').value), status: document.getElementById('wafaStatus').checked },
+                returns: { days: parseInt(document.getElementById('returnDays').value), status: document.getElementById('returnStatus').checked },
+                security: { masterSwitch: document.getElementById('masterSwitch').checked, password: document.getElementById('toolPassword').value },
+                blockedDates: blockedDatesArray,
+                announcement: document.getElementById('sysMessage').value
+            };
+
+            try {
+                let res = await fetch(dbUrl, { method: 'PUT', body: JSON.stringify(config) });
+                if(res.ok) { showNotif("✅ تم الحفظ وتحديث السيستم بنجاح!"); }
+                else { showNotif("❌ السيرفر رفض الحفظ (تحقق من الـ Rules)", true); }
+            } catch(e) { showNotif("❌ فشل الاتصال بالسيرفر!", true); }
+        }
+    </script>
+</body>
+</html>
