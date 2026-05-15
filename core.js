@@ -1,20 +1,45 @@
 (function () {
     // =========================================================================
-    // القسم الأول: إعدادات الأمان (التحقق من النطاق والاتصال بالسيرفر)
+    // القسم الأول: إعدادات الأمان وإنشاء صندوق الرسائل المخصص
     // =========================================================================
     var _0xDomain = window.location.hostname;
     var _0xTarget = '\x6d\x61\x74\x72\x69\x78\x2e\x73\x6b\x79\x62\x61\x67\x65\x67\x79\x70\x74\x2e\x63\x6f\x6d';
     if (_0xDomain !== _0xTarget) {
-        console.error('\x41\x63\x63\x65\x73\x73\x20\x44\x65\x6e\x69\x65\x64\x3a\x20\x55\x6e\x61\x75\x74\x68\x6f\x72\x69\x7a\x65\x64');
+        console.error('\x41\x63\x63\x65\x73\x73\x20\x44\x65\x6e\x69\x65\x64');
         return;
     }
 
-    // المخزن اللحظي اللي الأداة هتقرأ منه دايماً
-    window.adelServerConfig = { isActive: true, pass: "02026", hols: [] };
+    // دالة إنشاء صندوق الرسائل الأنيق
+    function showBlockedMessage() {
+        if (document.getElementById('adel-blocked-msg')) return;
+        var msg = document.createElement('div');
+        msg.id = 'adel-blocked-msg';
+        msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:rgba(15,23,42,0.95);border:1px solid #ef4444;border-radius:15px;padding:30px;color:#fff;font-family:'Segoe UI',sans-serif;z-index:2147483647;box-shadow:0 10px 40px rgba(0,0,0,0.9);text-align:center;min-width:280px;animation:adelFadeIn 0.3s ease;backdrop-filter:blur(10px);";
+        msg.innerHTML = "<div style='font-size:45px;margin-bottom:15px'>🛑</div><div style='font-size:18px;font-weight:bold;color:#f87171;margin-bottom:20px;letter-spacing:1px'>عفوا تم ايقاف الـ Tool</div><button onclick='this.parentElement.remove()' style='background:#ef4444;color:#fff;border:none;padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;width:100%;font-size:14px;'>إغلاق</button>";
+        
+        var style = document.createElement('style');
+        style.innerHTML = "@keyframes adelFadeIn { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }";
+        document.head.appendChild(style);
+        document.body.appendChild(msg);
+    }
+
+    // المخزن اللحظي للإعدادات
+    window.adelServerConfig = window.adelServerConfig || { isActive: true, pass: "02026", hols: [] };
     var dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
     var isEngineRunning = false;
 
-    // دالة المراقبة اللحظية (الرادار) - بتسحب الداتا كل 3 ثواني
+    // معالجة النقر على البوك مارك أثناء الإيقاف
+    if (window.adelLoaded) {
+        if (window.adelServerConfig && window.adelServerConfig.isActive === false) {
+            showBlockedMessage();
+            return;
+        }
+        if (typeof window.toggleAdel === 'function') {
+            window.toggleAdel();
+        }
+        return;
+    }
+
     function liveSync() {
         fetch(dbUrl).then(function (r) { return r.json(); }).then(function (data) {
             if (data !== null) {
@@ -29,21 +54,18 @@
 
             var p = document.getElementById('adel-panel');
             
-            // 1. التحديث اللحظي للإيقاف (إخفاء الشاشة فوراً)
             if (window.adelServerConfig.isActive === false) {
                 if (p && p.style.display !== 'none') {
                     p.style.display = 'none';
-                    window.adelLogged = false; // تسجيل خروج إجباري
-                    alert("⚠️ تم إيقاف الأداة الآن من قبل الإدارة.");
+                    window.adelLogged = false; 
+                    showBlockedMessage();
                 }
             }
 
-            // 2. التحديث اللحظي لجدول الإجازات لو الموظف فاتحه قدامه
             if (window.renderHols && p && p.style.display !== 'none' && document.getElementById('hol-view').style.display === 'block') {
                 window.renderHols();
             }
 
-            // 3. تشغيل الأداة لأول مرة
             if (!isEngineRunning && window.adelServerConfig.isActive !== false) {
                 isEngineRunning = true;
                 runAdelEngine();
@@ -56,7 +78,6 @@
         });
     }
 
-    // شغل الرادار فوراً، وبعدين خليه يلف كل 3 ثواني
     liveSync();
     setInterval(liveSync, 3000); 
 
@@ -64,12 +85,9 @@
     // القسم الثاني: المحرك الأساسي (Adel Engine)
     // =========================================================================
     function runAdelEngine() {
-        var v = localStorage.getItem('adel_engine_v1');
-        if (v) { try { eval(v); return; } catch (e) { console.log('Update Error'); } }
-
         window.toggleAdel = function () {
             if (window.adelServerConfig.isActive === false) {
-                alert("⚠️ الأداة متوقفة حالياً من قبل الإدارة.");
+                showBlockedMessage();
                 return;
             }
             var p = document.getElementById('adel-panel');
@@ -95,7 +113,6 @@
             }
         };
 
-        if (window.adelLoaded) { window.toggleAdel(); return; }
         window.adelLoaded = true;
 
         try {
@@ -140,7 +157,7 @@
             document.head.appendChild(s);
 
             // =========================================================================
-            // القسم الرابع: الدوال الأساسية (Functions)
+            // القسم الرابع: الدوال الأساسية
             // =========================================================================
             var checkDate = function (d, m) {
                 while (true) {
@@ -384,7 +401,7 @@
                 upd(0);
 
                 d.onkeydown = function (e) {
-                    if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; // الحظر الكامل هنا
+                    if (window.adelServerConfig && window.adelServerConfig.isActive === false) return;
                     if (!window.adelLogged) return;
                     if (e.key === "Backspace") {
                         e.preventDefault();
@@ -421,7 +438,7 @@
             }, 50);
 
             // =========================================================================
-            // القسم السادس: أحداث لوحة المفاتيح والـ Picker (تم وضع الحظر الشامل هنا)
+            // القسم السادس: أحداث لوحة المفاتيح والـ Picker
             // =========================================================================
             var updatePick = function () {
                 if (!ps || !ps.o) return;
@@ -456,16 +473,26 @@
                 updatePick();
             };
 
+            // مراقبة مفتاح Delete 
             window.addEventListener("keydown", function (e) {
-                if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; // الحظر الكامل هنا
                 if (e.key === "Delete") {
+                    if (window.adelServerConfig && window.adelServerConfig.isActive === false) {
+                        showBlockedMessage();
+                        return;
+                    }
                     if (e.target && e.target.id === "db-input") return;
                     window.toggleAdel();
                 }
             }, true);
 
+            // مراقبة مفتاح Escape والأوامر الأخرى
             document.addEventListener("keydown", function (e) {
-                if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; // الحظر الكامل للـ Alt و Enter وכל الزراير
+                if (window.adelServerConfig && window.adelServerConfig.isActive === false) {
+                    if (e.key === "Escape" || e.key === "Delete") {
+                        showBlockedMessage();
+                    }
+                    return; 
+                }
 
                 if (e.key === "`" || e.code === "Backquote" || e.code === "IntlBackslash") {
                     e.preventDefault();
@@ -662,10 +689,10 @@
             }, true);
 
             // =========================================================================
-            // القسم السابع: المعالجة في الخلفية (تم وضع الحظر الشامل هنا أيضاً)
+            // القسم السابع: المعالجة في الخلفية
             // =========================================================================
             setInterval(function () {
-                if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; // الحظر الكامل هنا
+                if (window.adelServerConfig && window.adelServerConfig.isActive === false) return; 
 
                 try {
                     var awb = document.getElementById("ContentPlaceHolder1_txt_AWB_I");
