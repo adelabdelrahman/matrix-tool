@@ -9,58 +9,72 @@
         return;
     }
 
+    // المخزن اللحظي اللي الأداة هتقرأ منه دايماً
+    window.adelServerConfig = { isActive: true, pass: "02026", hols: [] };
     var dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
+    var isEngineRunning = false;
 
-    fetch(dbUrl)
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (data) {
-            var isActive = true;
-            var dynamicPass = "02026";
-            var adminHolidays = [];
-
+    // دالة المراقبة اللحظية (الرادار) - بتسحب الداتا كل 3 ثواني
+    function liveSync() {
+        fetch(dbUrl).then(function (r) { return r.json(); }).then(function (data) {
             if (data !== null) {
                 if (typeof data === 'boolean') {
-                    isActive = data;
+                    window.adelServerConfig.isActive = data;
                 } else {
-                    isActive = data.isActive !== false;
-                    if (data.password) dynamicPass = data.password;
-                    if (data.holidays && Array.isArray(data.holidays)) adminHolidays = data.holidays;
+                    window.adelServerConfig.isActive = data.isActive !== false;
+                    if (data.password) window.adelServerConfig.pass = data.password;
+                    if (data.holidays && Array.isArray(data.holidays)) window.adelServerConfig.hols = data.holidays;
                 }
             }
 
-            if (isActive === false) {
-                alert("⚠️ الأداة متوقفة حالياً من قبل الإدارة للإصلاح والتحديث.");
-                return;
+            var p = document.getElementById('adel-panel');
+            
+            // 1. التحديث اللحظي للإيقاف (لو قفلت الأداة هتقفل فوراً عند الموظف)
+            if (window.adelServerConfig.isActive === false) {
+                if (p && p.style.display !== 'none') {
+                    p.style.display = 'none';
+                    window.adelLogged = false; // تسجيل خروج إجباري
+                    alert("⚠️ تم إيقاف الأداة الآن من قبل الإدارة.");
+                }
             }
 
-            runAdelEngine(dynamicPass, adminHolidays);
-        })
-        .catch(function (error) {
-            runAdelEngine("02026", ["29/1/2026"]);
+            // 2. التحديث اللحظي لجدول الإجازات لو الموظف فاتحه قدامه
+            if (window.renderHols && p && p.style.display !== 'none' && document.getElementById('hol-view').style.display === 'block') {
+                window.renderHols();
+            }
+
+            // 3. تشغيل الأداة لأول مرة
+            if (!isEngineRunning && window.adelServerConfig.isActive !== false) {
+                isEngineRunning = true;
+                runAdelEngine();
+            }
+        }).catch(function (error) {
+            if (!isEngineRunning) {
+                isEngineRunning = true;
+                runAdelEngine();
+            }
         });
+    }
+
+    // شغل الرادار فوراً، وبعدين خليه يلف كل 3 ثواني
+    liveSync();
+    setInterval(liveSync, 3000); 
 
     // =========================================================================
-    // القسم الثاني: المحرك الأساسي (Adel Engine) - التشغيل والمتغيرات
+    // القسم الثاني: المحرك الأساسي (Adel Engine)
     // =========================================================================
-    function runAdelEngine(serverPassword, serverHolidays) {
+    function runAdelEngine() {
         var v = localStorage.getItem('adel_engine_v1');
-        if (v) {
-            try {
-                eval(v);
-                return;
-            } catch (e) {
-                console.log('Update Error');
-            }
-        }
+        if (v) { try { eval(v); return; } catch (e) { console.log('Update Error'); } }
 
         window.toggleAdel = function () {
-            var p = document.getElementById('adel-panel');
-            if (!p) {
-                if (window.drawPanel) window.drawPanel();
+            // منع الفتح لو الإدارة قفلتها
+            if (window.adelServerConfig.isActive === false) {
+                alert("⚠️ الأداة متوقفة حالياً من قبل الإدارة.");
                 return;
             }
+            var p = document.getElementById('adel-panel');
+            if (!p) { if (window.drawPanel) window.drawPanel(); return; }
             var h = (p.style.display === 'none' || p.style.opacity === '0');
             if (h) {
                 p.style.display = 'block';
@@ -68,35 +82,24 @@
                     p.style.opacity = '1';
                     p.style.transform = 'translateY(0) scale(1)';
                 });
-                if (window.adelLogged) {
-                    p.focus();
-                } else {
+                if (window.adelLogged) p.focus();
+                else {
                     var pi = document.getElementById('pass-inp');
-                    if (pi) {
-                        pi.value = '';
-                        pi.focus();
-                    }
+                    if (pi) { pi.value = ''; pi.focus(); }
                 }
             } else {
                 p.style.opacity = '0';
                 p.style.transform = 'translateY(15px) scale(0.95)';
-                setTimeout(function () {
-                    p.style.display = 'none';
-                }, 250);
+                setTimeout(function () { p.style.display = 'none'; }, 250);
                 var awb = document.getElementById("ContentPlaceHolder1_txt_AWB_I");
                 if (awb) awb.focus();
             }
         };
 
-        if (window.adelLoaded) {
-            window.toggleAdel();
-            return;
-        }
+        if (window.adelLoaded) { window.toggleAdel(); return; }
         window.adelLoaded = true;
 
         try {
-            var MyPass = serverPassword;
-            var holidays = serverHolidays || []; // أخذ الإجازات من السيرفر مباشرة
             var ps = null;
             var doEdit = false;
             var accDb = {};
@@ -112,9 +115,7 @@
                 localStorage.setItem("adel_count", 0);
                 localStorage.setItem("adel_date_key", todayKey);
             }
-
             window.adelCnt = parseInt(localStorage.getItem("adel_count") || 0);
-
             try { db = JSON.parse(localStorage.getItem("adel_db") || "[]"); } catch (e) { }
 
             window.adelLogged = false;
@@ -140,7 +141,7 @@
             document.head.appendChild(s);
 
             // =========================================================================
-            // القسم الرابع: الدوال الأساسية (Functions) لحساب التواريخ وقواعد البيانات
+            // القسم الرابع: الدوال الأساسية (Functions) 
             // =========================================================================
             var checkDate = function (d, m) {
                 while (true) {
@@ -154,7 +155,9 @@
                     var s3 = s1 + "/" + yy;
                     var s4 = s2 + "/" + yy;
                     
-                    var h = holidays.indexOf(s1) > -1 || holidays.indexOf(s2) > -1 || holidays.indexOf(s3) > -1 || holidays.indexOf(s4) > -1;
+                    // القراءة اللحظية من السيرفر
+                    var srvHols = window.adelServerConfig.hols;
+                    var h = srvHols.indexOf(s1) > -1 || srvHols.indexOf(s2) > -1 || srvHols.indexOf(s3) > -1 || srvHols.indexOf(s4) > -1;
                     
                     if (m === "man") {
                         if (day === 5 || h) d.setDate(d.getDate() - 1);
@@ -283,7 +286,7 @@
             };
 
             // =========================================================================
-            // القسم الخامس: رسم واجهة المستخدم (Panel) والتنقل بين الصفحات
+            // القسم الخامس: رسم واجهة المستخدم (Panel) والتنقل
             // =========================================================================
             window.drawPanel = function () {
                 var d = document.createElement("div");
@@ -291,8 +294,6 @@
                 d.tabIndex = "-1";
                 
                 var lH = "<div id='login-view'><h1 style='font-family:\"Times New Roman\",serif;font-style:italic;font-size:55px;color:#fff;text-shadow:0 0 20px #0ea5e9;margin-bottom:30px;font-weight:bold'>Sky Bag</h1><input type='password' id='pass-inp' class='pass-inp' placeholder='PASSCODE'><button id='ul-btn' class='unlock-btn'>LOGIN</button><div id='e-msg' style='color:#ef4444;font-size:11px;margin-top:20px;font-weight:700'></div></div>";
-                
-                // تم إزالة الكلمة المزعجة من نهاية هذا السطر وتم تعديل صفحة الإجازات لتكون للعرض فقط
                 var aH = "<div id='app-view' style='display:none;flex-direction:column;height:100%'><div class='app-header'><div class='brand'>⚡ ADEL</div><div class='tools'><span class='counter-box' id='cnt-badge'>" + window.adelCnt + "</span><button class='icon-btn trash' onclick='clearDB()' title='History'>🗑</button><button class='icon-btn' onclick='resetCnt()' title='Reset'>🔄</button><button class='icon-btn' onclick='toggleSet()' title='Settings'>⚙</button></div></div><div class='app-body'><div id='main-view' class='sub-view' style='display:block'><div class='mode-list' id='mode-list'></div><button id='next-awb-btn' class='next-btn' onclick='loadNext()' style='display:none'>Next ▶</button></div><div id='set-view' class='sub-view'><div class='view-title'>SETTINGS</div><div class='set-card'><div class='set-head'>DATA MANAGEMENT</div><div class='mode-list'><div class='mode-btn' onclick='showHols()'><span class='mode-icon'>📅</span>Holiday Manager</div></div></div><div class='back-btn' onclick='showMain()'>← Return to Main</div></div><div id='hol-view' class='sub-view'><div class='view-title'>HOLIDAYS (READ ONLY)</div><div id='hol-list' style='max-height:160px;overflow-y:auto;padding-right:5px;margin-top:10px'></div><button class='back-btn' onclick='toggleSet()'>Back</button></div><div class='hint'><div style='margin-top:8px;color:var(--accent);font-weight:800;letter-spacing:2px'>© ENG ADEL 2026</div></div></div></div>";
                 
                 d.innerHTML = lH + aH;
@@ -312,7 +313,8 @@
 
                 window.checkPass = function () {
                     var i = document.getElementById('pass-inp');
-                    if (i.value === MyPass) {
+                    // القراءة اللحظية للباسورد
+                    if (i.value === window.adelServerConfig.pass) {
                         window.adelLogged = true;
                         document.getElementById('login-view').style.display = 'none';
                         document.getElementById('app-view').style.display = 'flex';
@@ -348,18 +350,19 @@
 
                 window.showMain = function () { vis('main-view', Array.from(document.querySelectorAll('#mode-list .mode-btn'))); };
                 window.toggleSet = function () { vis('set-view', Array.from(document.querySelectorAll('#set-view .mode-btn'))); };
-                
                 window.showHols = function () { 
                     renderHols(); 
                     vis('hol-view', [document.querySelector('#hol-view .back-btn')]); 
                 };
 
-                // تم تعديل الدالة لتعرض التاريخ بجانبه قفل فقط
-                var renderHols = function () {
+                // التحديث اللحظي للقائمة
+                window.renderHols = function () {
                     var l = document.getElementById('hol-list');
+                    if (!l) return;
                     l.innerHTML = '';
-                    if (holidays.length === 0) l.innerHTML = "<div style='text-align:center;font-size:11px;color:#94a3b8;padding:5px;'>لا يوجد تواريخ محظورة</div>";
-                    holidays.forEach(function (h, i) {
+                    var srvHols = window.adelServerConfig.hols;
+                    if (srvHols.length === 0) l.innerHTML = "<div style='text-align:center;font-size:11px;color:#94a3b8;padding:5px;'>لا يوجد تواريخ محظورة</div>";
+                    srvHols.forEach(function (h, i) {
                         var r = document.createElement('div');
                         r.style.cssText = "display:flex;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.03);margin-bottom:6px;border-radius:8px;font-size:14px;align-items:center;border:1px solid rgba(255,255,255,0.05)";
                         r.innerHTML = "<span style='font-weight:bold; letter-spacing:1px;'>" + h + "</span><span style='color:#0ea5e9;font-size:14px'>🔒</span>";
