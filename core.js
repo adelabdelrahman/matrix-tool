@@ -9,7 +9,7 @@
         return;
     }
 
-    // توليد وتخزين الـ Device ID
+    // توليد وتخزين الـ Device ID (يُرسل للإدارة فقط ولا يظهر للمستخدم)
     var myDeviceId = localStorage.getItem('adel_device_id');
     if (!myDeviceId) {
         myDeviceId = 'PC-' + Math.floor(Math.random() * 90000 + 10000);
@@ -18,17 +18,17 @@
 
     function showBlockedMessage(customMsg) {
         if (document.getElementById('adel-blocked-msg')) return;
-        var msgText = customMsg || "عفواً تم إيقاف الـ Tool";
+        var msgText = customMsg || "تم ايقاف الـ Tool";
         
         var msg = document.createElement('div');
         msg.id = 'adel-blocked-msg';
         msg.dir = "rtl"; 
         msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:rgba(15,23,42,0.92);border:1px solid rgba(239,68,68,0.4);border-radius:20px;padding:35px 25px;color:#fff;font-family:'Segoe UI',sans-serif;z-index:2147483647;box-shadow:0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(239,68,68,0.1);min-width:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;backdrop-filter:blur(15px);animation:adelPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);";
         
+        // تم إخفاء الـ ID من هنا حسب طلبك
         msg.innerHTML = `
             <div style='font-size:50px; margin-bottom:15px; text-shadow: 0 0 20px rgba(239,68,68,0.6);'>🚫</div>
-            <div style='font-size:20px; font-weight:900; color:#f87171; margin-bottom:10px; letter-spacing:1px;'>${msgText}</div>
-            <div style='font-size:12px; color:#94a3b8; margin-bottom:25px; font-weight:600; font-family:monospace;'>Device ID: ${myDeviceId}</div>
+            <div style='font-size:20px; font-weight:900; color:#f87171; margin-bottom:25px; letter-spacing:1px;'>${msgText}</div>
             <button onclick='this.parentElement.remove()' id='adel-close-btn' style='background:linear-gradient(135deg, #ef4444, #dc2626); color:#fff; border:none; padding:12px 35px; border-radius:30px; cursor:pointer; font-weight:bold; font-size:15px; box-shadow:0 5px 15px rgba(239,68,68,0.4); outline:none; transition:all 0.3s;'>إغلاق النافذة</button>
         `;
         
@@ -44,10 +44,10 @@
     var pingUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices/" + myDeviceId + ".json";
     var isEngineRunning = false;
 
-    // فحص ما إذا كان الجهاز محظوراً أو النظام متوقف
+    // فحص ما إذا كان الجهاز محظوراً أو النظام متوقف (تم تغيير الرسائل حسب طلبك)
     function checkBlockStatus() {
-        if (window.adelServerConfig.isActive === false) return "عفواً تم إيقاف النظام للصيانة";
-        if (window.adelServerConfig.blockedDevices && window.adelServerConfig.blockedDevices.includes(myDeviceId)) return "تم حظر هذا الجهاز من قبل الإدارة";
+        if (window.adelServerConfig.isActive === false) return "تم ايقاف الـ Tool";
+        if (window.adelServerConfig.blockedDevices && window.adelServerConfig.blockedDevices.includes(myDeviceId)) return "تم حظر هذا الجهاز";
         return false;
     }
 
@@ -298,7 +298,9 @@
             window.drawPanel = function () {
                 var d = document.createElement("div"); d.id = "adel-panel"; d.tabIndex = "-1";
                 var lH = "<div id='login-view'><h1 style='font-family:\"Times New Roman\",serif;font-style:italic;font-size:55px;color:#fff;text-shadow:0 0 20px #0ea5e9;margin-bottom:30px;font-weight:bold'>Sky Bag</h1><input type='password' id='pass-inp' class='pass-inp' placeholder='PASSCODE'><button id='ul-btn' class='unlock-btn'>LOGIN</button><div id='e-msg' style='color:#ef4444;font-size:11px;margin-top:20px;font-weight:700'></div></div>";
-                var aH = "<div id='app-view' style='display:none;flex-direction:column;height:100%'><div class='app-header'><div class='brand'>⚡ ADEL</div><div class='tools'><span class='counter-box' id='cnt-badge'>" + window.adelCnt + "</span><button class='icon-btn trash' onclick='clearDB()' title='History'>🗑</button><button class='icon-btn' onclick='resetCnt()' title='Reset'>🔄</button><button class='icon-btn' onclick='toggleSet()' title='Settings'>⚙</button></div></div><div class='app-body'><div id='main-view' class='sub-view' style='display:block'><div class='mode-list' id='mode-list'></div><button id='next-awb-btn' class='next-btn' onclick='loadNext()' style='display:none'>Next ▶</button></div><div id='set-view' class='sub-view'><div class='view-title'>SETTINGS</div><div class='set-card'><div class='set-head'>DATA MANAGEMENT</div><div class='mode-list'><div class='mode-btn' onclick='showHols()'><span class='mode-icon'>📅</span>Holiday Manager</div></div></div><div class='back-btn' onclick='showMain()'>← Return to Main</div></div><div id='hol-view' class='sub-view'><div class='view-title'>HOLIDAYS (READ ONLY)</div><div id='hol-list' style='max-height:160px;overflow-y:auto;padding-right:5px;margin-top:10px'></div><button class='back-btn' onclick='toggleSet()'>Back</button></div><div class='hint'><div style='margin-top:8px;color:var(--accent);font-weight:800;letter-spacing:2px;font-family:monospace;'>ID: "+myDeviceId+"</div><div style='margin-top:5px;color:#94a3b8;font-size:8px;'>© ENG ADEL 2026</div></div></div></div>";
+                
+                // تم تحديث جملة حقوق الملكية وإخفاء الـ ID
+                var aH = "<div id='app-view' style='display:none;flex-direction:column;height:100%'><div class='app-header'><div class='brand'>⚡ ADEL</div><div class='tools'><span class='counter-box' id='cnt-badge'>" + window.adelCnt + "</span><button class='icon-btn trash' onclick='clearDB()' title='History'>🗑</button><button class='icon-btn' onclick='resetCnt()' title='Reset'>🔄</button><button class='icon-btn' onclick='toggleSet()' title='Settings'>⚙</button></div></div><div class='app-body'><div id='main-view' class='sub-view' style='display:block'><div class='mode-list' id='mode-list'></div><button id='next-awb-btn' class='next-btn' onclick='loadNext()' style='display:none'>Next ▶</button></div><div id='set-view' class='sub-view'><div class='view-title'>SETTINGS</div><div class='set-card'><div class='set-head'>DATA MANAGEMENT</div><div class='mode-list'><div class='mode-btn' onclick='showHols()'><span class='mode-icon'>📅</span>Holiday Manager</div></div></div><div class='back-btn' onclick='showMain()'>← Return to Main</div></div><div id='hol-view' class='sub-view'><div class='view-title'>HOLIDAYS (READ ONLY)</div><div id='hol-list' style='max-height:160px;overflow-y:auto;padding-right:5px;margin-top:10px'></div><button class='back-btn' onclick='toggleSet()'>Back</button></div><div class='hint'><div style='margin-top:8px;color:var(--accent);font-weight:800;letter-spacing:1px;font-size:10px;'>© ENG ADEL_ABDELRAHMAN 2026</div></div></div></div>";
                 
                 d.innerHTML = lH + aH;
                 var cObj = d.querySelector("#mode-list");
