@@ -31,22 +31,20 @@
             box-sizing: border-box; 
         }
         
-        /* شاشة تسجيل الدخول */
         #login-screen {
             width: 100%;
             max-width: 400px;
             margin-top: 10vh;
-            display: flex; /* هتكون ظاهرة في البداية */
+            display: flex; 
             flex-direction: column;
             gap: 20px;
             animation: adelFadeIn 0.5s ease;
         }
 
-        /* حاوية الداشبورد العريضة (مخفية في البداية) */
         #main-dashboard { 
             width: 100%; 
             max-width: 1100px; 
-            display: none; /* مخفية حتى تسجيل الدخول */
+            display: none; 
             flex-direction: column; 
             gap: 25px; 
             animation: adelFadeIn 0.5s ease;
@@ -57,20 +55,17 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Header */
         header { border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 10px; text-align: center;}
         .header-title { font-size: 28px; font-weight: 900; color: #fff; margin: 0 0 5px 0; letter-spacing: 1px; }
         .header-title span { color: var(--accent-blue); }
         .header-subtitle { font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px;}
 
-        /* Grid Layout */
         .grid-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
 
-        /* Admin Cards */
         .admin-card { 
             background: var(--bg-card); 
             border: 1px solid var(--border-color); 
@@ -95,7 +90,6 @@
 
         .badge-count { background: rgba(2, 132, 199, 0.2); color: var(--accent-blue); padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 900; border: 1px solid rgba(2, 132, 199, 0.3);}
 
-        /* Master Switch */
         .switch-wrapper { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); }
         .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -109,16 +103,17 @@
         .dot.online { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
         .dot.offline { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
 
-        /* Inputs & Buttons */
         .input-group { margin-bottom: 20px; }
         .input-label { display: block; color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
         input[type="text"], input[type="password"] { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #030712; color: #fff; text-align: center; font-size: 16px; font-weight: bold; font-family: monospace; box-sizing: border-box; transition: 0.3s; }
         input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: var(--accent-blue); }
         
+        textarea.json-input { width: 100%; height: 150px; padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #030712; color: #fff; font-size: 13px; font-family: monospace; box-sizing: border-box; transition: 0.3s; resize: vertical; direction: ltr; }
+        textarea.json-input:focus { outline: none; border-color: var(--accent-blue); }
+
         .btn-primary { background: var(--accent-blue); color: white; border: none; padding: 18px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; font-family: 'Tajawal', sans-serif; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;}
         .btn-primary:hover { background: var(--accent-hover); }
         
-        /* Lists */
         .flex-row { display: flex; gap: 10px; }
         .flex-row input { margin-bottom: 0; text-align: right; padding-right: 15px; font-family: 'Tajawal', sans-serif;}
         .btn-secondary { background: #1f2937; color: white; border: 1px solid #374151; padding: 0 25px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; font-family: 'Tajawal', sans-serif;}
@@ -146,7 +141,6 @@
         .hol-text { font-family: monospace; font-weight: bold; font-size: 14px; color: #e5e7eb;}
         .empty-state { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 30px 10px; }
 
-        /* Custom System Notifications */
         .system-toast {
             position: fixed;
             bottom: 30px;
@@ -236,6 +230,12 @@
                     </div>
                 </div>
 
+                <div class="admin-card">
+                    <div class="section-header">Accounts Database (JSON)</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">سيتم تحديث قاعدة بيانات الحسابات تلقائياً لجميع المستخدمين:</div>
+                    <textarea id="accDbInput" class="json-input" placeholder='{"12345": {"n": "Company", "p": "Product"}}'></textarea>
+                </div>
+
                 <div class="admin-card" style="flex: 1;">
                     <div class="section-header">Holiday Management</div>
                     <div class="flex-row">
@@ -253,12 +253,7 @@
     </div>
 
     <script>
-        // =======================================================
-        // 1. نظام تسجيل الدخول للآدمن (البوابة)
-        // =======================================================
-        
-        // 🔴 غير الباسورد ده براحتك، ده باسورد فتح لوحة التحكم نفسها 🔴
-        const DASHBOARD_PASSWORD = "admin@0282003"; 
+        const DASHBOARD_PASSWORD = "Adel_Admin2026"; 
 
         document.getElementById('authPassInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') verifyAdmin();
@@ -267,10 +262,8 @@
         function verifyAdmin() {
             const inputVal = document.getElementById('authPassInput').value;
             if (inputVal === DASHBOARD_PASSWORD) {
-                // إخفاء تسجيل الدخول وإظهار اللوحة
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-dashboard').style.display = 'flex';
-                // بدء تشغيل سحب البيانات من السيرفر
                 initDashboard();
                 showSystemToast("تم تسجيل الدخول بنجاح", "success");
             } else {
@@ -279,9 +272,6 @@
             }
         }
 
-        // =======================================================
-        // 2. إعدادات لوحة التحكم (الداشبورد)
-        // =======================================================
         const dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
         const devicesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices.json";
         
@@ -289,12 +279,13 @@
         const statusText = document.getElementById('statusText');
         const statusDot = document.getElementById('statusDot');
         const passInput = document.getElementById('passInput');
+        const accDbInput = document.getElementById('accDbInput');
         const holsListDiv = document.getElementById('adminHolsList');
         const newHolDate = document.getElementById('newHolDate');
         
         let currentHolidays = []; 
         let blockedDevices = []; 
-        let liveSyncInterval; // متغير للتحكم في المزامنة الحية
+        let liveSyncInterval; 
 
         function showSystemToast(message, type = 'success') {
             const existing = document.getElementById('sys-toast');
@@ -315,7 +306,6 @@
             }, 3000);
         }
 
-        // الدالة دي مبتشتغلش إلا لو الباسورد صح
         function initDashboard() {
             fetch(dbUrl).then(r => r.json()).then(data => {
                 if(data !== null) {
@@ -325,6 +315,8 @@
                         if(data.password) passInput.value = data.password;
                         if(data.holidays) currentHolidays = data.holidays;
                         if(data.blockedDevices) blockedDevices = data.blockedDevices;
+                        // قراءة القاموس من الفايربيس لو موجود
+                        if(data.accDb) accDbInput.value = JSON.stringify(data.accDb, null, 2);
                     }
                 }
                 updateText();
@@ -412,12 +404,22 @@
         }
 
         function saveStatus(silent = false) {
+            let parsedAccDb = {};
+            try {
+                let rawVal = accDbInput.value.trim();
+                if(rawVal) parsedAccDb = JSON.parse(rawVal);
+            } catch(e) {
+                showSystemToast("خطأ في صيغة JSON في قاعدة الحسابات!", "error");
+                return;
+            }
+
             const config = {
                 isActive: powerSwitch.checked,
                 password: passInput.value,
                 holidays: currentHolidays,
                 blockedDevices: blockedDevices,
-                adminKey: 'Adel_Matrix_2026' // المفتاح السري للفايربيس
+                accDb: parsedAccDb, // إرسال القاموس للفايربيس
+                adminKey: 'Adel_Matrix_2026' 
             };
             fetch(dbUrl, { method: 'PUT', body: JSON.stringify(config) })
             .then(response => {
