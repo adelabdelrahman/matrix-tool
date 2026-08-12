@@ -1,433 +1,431 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyBag - System Administration</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <title>SkyBag - Admin Command Center</title>
     <style>
         :root {
-            --bg-main: #0b1120;
-            --bg-card: #111827;
-            --border-color: #1f2937;
-            --text-primary: #f9fafb;
-            --text-secondary: #9ca3af;
-            --accent-blue: #0284c7;
-            --accent-hover: #0369a1;
-            --danger: #dc2626;
-            --success: #16a34a;
-        }
-
-        body { 
-            background-color: var(--bg-main); 
-            color: var(--text-primary); 
-            font-family: 'Tajawal', sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start;
-            min-height: 100vh; 
-            margin: 0; 
-            padding: 40px 20px; 
-            box-sizing: border-box; 
+            --bg-body: #0b1120;
+            --bg-sidebar: #111827;
+            --bg-card: #1f2937;
+            --border: #374151;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
         }
         
-        #login-screen {
-            width: 100%;
-            max-width: 400px;
-            margin-top: 10vh;
-            display: flex; 
-            flex-direction: column;
-            gap: 20px;
-            animation: adelFadeIn 0.5s ease;
-        }
-
-        #main-dashboard { 
-            width: 100%; 
-            max-width: 1100px; 
-            display: none; 
-            flex-direction: column; 
-            gap: 25px; 
-            animation: adelFadeIn 0.5s ease;
-        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; transition: all 0.3s ease; }
+        body { display: flex; height: 100vh; background-color: var(--bg-body); color: var(--text-main); overflow: hidden; }
         
-        @keyframes adelFadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        header { border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 10px; text-align: center;}
-        .header-title { font-size: 28px; font-weight: 900; color: #fff; margin: 0 0 5px 0; letter-spacing: 1px; }
-        .header-title span { color: var(--accent-blue); }
-        .header-subtitle { font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px;}
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .admin-card { 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-color); 
-            border-radius: 12px; 
-            padding: 25px; 
-            display: flex;
-            flex-direction: column;
-        }
+        /* Sidebar (Collapsible) */
+        .sidebar { width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; }
+        .sidebar.collapsed { width: 70px; }
         
-        .section-header { 
-            font-size: 15px; 
-            color: #fff; 
-            font-weight: 700; 
-            border-bottom: 1px solid var(--border-color); 
-            padding-bottom: 15px; 
-            margin-bottom: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            text-transform: uppercase;
-        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; overflow: hidden; white-space: nowrap;}
+        .brand { font-size: 20px; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .sidebar.collapsed .brand-text { display: none; }
+        
+        .toggle-btn { background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 5px; }
+        .toggle-btn:hover { color: #fff; }
+        
+        .nav-menu { flex: 1; padding: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 15px; color: var(--text-muted); text-decoration: none; cursor: pointer; border-left: 3px solid transparent; font-weight: 600; white-space: nowrap;}
+        .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: #fff; border-left-color: var(--accent); }
+        .nav-icon { font-size: 18px; min-width: 25px; text-align: center; }
+        .sidebar.collapsed .nav-text { display: none; }
 
-        .badge-count { background: rgba(2, 132, 199, 0.2); color: var(--accent-blue); padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 900; border: 1px solid rgba(2, 132, 199, 0.3);}
+        /* Main Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+        
+        .top-bar { padding: 15px 30px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .page-title { font-size: 18px; font-weight: 800; }
+        .sync-status { font-size: 12px; font-weight: bold; background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; }
+        .sync-status.offline { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        
+        .content-container { padding: 30px; max-width: 1400px; margin: 0 auto; width: 100%; }
+        .tab-content { display: none; opacity: 0; transform: translateY(10px); }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
 
-        .switch-wrapper { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); }
+        /* Grids & Cards */
+        .grid-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .stat-header { font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-val { font-size: 32px; font-weight: 900; color: #fff; margin-top: 10px; }
+
+        .devices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .device-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; }
+        .device-card:hover { border-color: #4b5563; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+        .device-card.blocked { opacity: 0.7; border-color: rgba(239, 68, 68, 0.5); }
+        
+        .user-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .avatar { width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent), #1e3a8a); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; color: #fff; }
+        .user-info { flex: 1; overflow: hidden; }
+        .user-name { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+        .device-os { font-size: 11px; color: var(--text-muted); background: #0b1120; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); display: inline-block; margin-top: 4px;}
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); }
+
+        .info-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; align-items: center; }
+        .info-label { color: var(--text-muted); font-weight: 600; }
+        .info-val { font-weight: 700; color: #fff; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);}
+        
+        /* Message Reply Alert inside Card */
+        .reply-alert { background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 12px; }
+        .reply-alert span { color: var(--warning); font-weight: bold; display: block; margin-bottom: 4px;}
+
+        /* Action Buttons */
+        .card-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: var(--danger); color: #fff; }
+        .btn-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .btn-success:hover { background: var(--success); color: #fff; }
+        .btn-msg { background: rgba(59, 130, 246, 0.1); color: var(--accent); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .btn-msg:hover { background: var(--accent); color: #fff; }
+        .btn-clear { background: rgba(156, 163, 175, 0.1); color: var(--text-muted); border: 1px solid var(--border); margin-top: 5px; width: 100%;}
+        .btn-clear:hover { background: var(--border); color: #fff; }
+
+        /* Modal Overlay */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 999; display: none; justify-content: center; align-items: center; opacity: 0; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; width: 400px; padding: 25px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transform: scale(0.95); }
+        .modal-overlay.active .modal-box { transform: scale(1); }
+        .modal-title { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
+        .modal-close { cursor: pointer; color: var(--text-muted); font-size: 18px; }
+        .modal-close:hover { color: var(--danger); }
+        textarea { width: 100%; height: 100px; background: var(--bg-body); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: #fff; font-family: inherit; resize: none; margin-bottom: 15px; }
+        textarea:focus { outline: none; border-color: var(--accent); }
+
+        /* Settings Inputs */
+        input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-body); color: #fff; margin-bottom: 15px; font-weight: 600;}
+        input[type="text"]:focus { outline: none; border-color: var(--accent); }
+        .hol-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--bg-body); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; margin: 5px; font-family: monospace; font-size: 13px;}
+        .hol-tag span { color: var(--danger); cursor: pointer; font-weight: bold; }
+        .btn-save-global { padding: 15px 30px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; float: right; margin-top: 20px;}
+        .btn-save-global:hover { background: var(--accent-hover); }
+
+        /* Custom Switch */
         .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 26px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); border-radius: 26px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; border-radius: 50%; transition: .3s; }
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(24px); }
-        
-        .status-indicator { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .dot.online { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
-        .dot.offline { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
-
-        .input-group { margin-bottom: 20px; }
-        .input-label { display: block; color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #030712; color: #fff; text-align: center; font-size: 16px; font-weight: bold; font-family: monospace; box-sizing: border-box; transition: 0.3s; }
-        input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: var(--accent-blue); }
-        
-        textarea.json-input { width: 100%; height: 150px; padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #030712; color: #fff; font-size: 13px; font-family: monospace; box-sizing: border-box; transition: 0.3s; resize: vertical; direction: ltr; }
-        textarea.json-input:focus { outline: none; border-color: var(--accent-blue); }
-
-        .btn-primary { background: var(--accent-blue); color: white; border: none; padding: 18px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; font-family: 'Tajawal', sans-serif; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;}
-        .btn-primary:hover { background: var(--accent-hover); }
-        
-        .flex-row { display: flex; gap: 10px; }
-        .flex-row input { margin-bottom: 0; text-align: right; padding-right: 15px; font-family: 'Tajawal', sans-serif;}
-        .btn-secondary { background: #1f2937; color: white; border: 1px solid #374151; padding: 0 25px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; font-family: 'Tajawal', sans-serif;}
-        .btn-secondary:hover { background: #374151; }
-        
-        .list-container { flex: 1; min-height: 220px; max-height: 280px; overflow-y: auto; padding-right: 5px; margin-top: 15px;}
-        .list-container::-webkit-scrollbar { width: 4px; }
-        .list-container::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
-        
-        .list-item { display: flex; justify-content: space-between; align-items: center; background: #030712; padding: 12px 15px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border-color); transition: 0.2s;}
-        .list-item:hover { border-color: #374151; }
-        
-        .device-info { display: flex; flex-direction: column; text-align: left; direction: ltr; }
-        .device-id { font-weight: bold; font-size: 14px; color: #e5e7eb; font-family: monospace; display: flex; align-items: center; gap: 8px;}
-        .device-os { font-size: 11px; color: var(--text-secondary); margin-top: 4px;}
-        
-        .btn-action { border: 1px solid transparent; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: 'Tajawal', sans-serif; }
-        .btn-block { background: rgba(220, 38, 38, 0.1); color: var(--danger); border-color: rgba(220, 38, 38, 0.2); }
-        .btn-block:hover { background: var(--danger); color: #fff; }
-        .btn-unblock { background: rgba(22, 163, 74, 0.1); color: var(--success); border-color: rgba(22, 163, 74, 0.2); }
-        .btn-unblock:hover { background: var(--success); color: #fff; }
-        
-        .del-btn { color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: bold; padding-left: 15px; transition: 0.2s;}
-        .del-btn:hover { color: var(--danger); }
-        .hol-text { font-family: monospace; font-weight: bold; font-size: 14px; color: #e5e7eb;}
-        .empty-state { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 30px 10px; }
-
-        .system-toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #111827;
-            border-left: 4px solid var(--accent-blue);
-            color: #fff;
-            padding: 16px 24px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 99999;
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            pointer-events: none;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            font-family: 'Tajawal', sans-serif;
-        }
-        .system-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast-success { border-left-color: var(--success); }
-        .toast-error { border-left-color: var(--danger); }
-
-        @media (max-width: 768px) {
-            .grid-container { grid-template-columns: 1fr; gap: 20px;}
-            .list-container { min-height: 180px; }
-            .system-toast { width: 85%; }
-        }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <header style="border:none; padding-bottom: 0;">
-            <h1 class="header-title">SkyBag <span>Admin</span></h1>
-            <div class="header-subtitle">System Authentication</div>
-        </header>
-        <div class="admin-card" style="align-items: center; text-align: center; gap: 15px; padding: 40px 25px;">
-            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">يرجى إدخال كلمة مرور الإدارة للوصول للوحة التحكم</div>
-            <input type="password" id="authPassInput" placeholder="Admin Password" dir="ltr" autofocus>
-            <button class="btn-primary" onclick="verifyAdmin()" style="margin-top: 15px;">Access System</button>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <span>⚡</span> <span class="brand-text">Admin Panel</span>
+            </div>
+            <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="switchTab('monitoring', this)">
+                <span class="nav-icon">📊</span> <span class="nav-text">Live Monitoring</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('security', this)">
+                <span class="nav-icon">🔐</span> <span class="nav-text">Security & Access</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('holidays', this)">
+                <span class="nav-icon">📅</span> <span class="nav-text">Holidays Manager</span>
+            </div>
         </div>
     </div>
 
-    <div id="main-dashboard">
-        <header>
-            <h1 class="header-title">SkyBag <span>Admin</span></h1>
-            <div class="header-subtitle">System Control & Live Monitoring</div>
-        </header>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title" id="pageTitle">Live Monitoring</div>
+            <div class="sync-status" id="syncStatus">
+                <span style="display:inline-block;width:8px;height:8px;background:var(--success);border-radius:50%;box-shadow:0 0 5px var(--success);"></span>
+                Live Sync Active
+            </div>
+        </div>
 
-        <main class="grid-container">
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div class="admin-card">
-                    <div class="section-header">System Status</div>
-                    <div class="switch-wrapper">
-                        <div class="status-indicator" id="statusIndicator">
-                            <span class="dot online" id="statusDot"></span>
-                            <span id="statusText">System Active</span>
+        <div class="content-container">
+            
+            <!-- Tab: Monitoring -->
+            <div id="tab-monitoring" class="tab-content active">
+                <div class="grid-overview">
+                    <div class="stat-card">
+                        <div class="stat-header">Total Users Online</div>
+                        <div class="stat-val" id="totalOnline">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">Total Closed Today</div>
+                        <div class="stat-val" id="totalClosed" style="color: var(--accent);">0</div>
+                    </div>
+                </div>
+
+                <div class="devices-grid" id="devices-grid">
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">Scanning network for devices...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Security -->
+            <div id="tab-security" class="tab-content">
+                <div class="stat-card" style="max-width: 600px;">
+                    <h3 style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Master Control</h3>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <div style="font-weight: 800; font-size: 16px;">System Power Status</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">Toggle to disable tools for all users.</div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="powerSwitch" checked>
                             <span class="slider"></span>
                         </label>
                     </div>
-                </div>
 
-                <div class="admin-card" style="flex: 1;">
-                    <div class="section-header">
-                        <span>Connected Devices</span>
-                        <span class="badge-count" id="onlineCount">0</span>
-                    </div>
-                    <div id="activeDevicesList" class="list-container">
-                        <div class="empty-state">Scanning for devices...</div>
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div class="admin-card">
-                    <div class="section-header">Security Settings</div>
-                    <div class="input-group">
-                        <label class="input-label">System Access Password</label>
+                    <div>
+                        <div style="font-weight: 800; font-size: 14px; margin-bottom: 8px;">Master Passcode</div>
                         <input type="text" id="passInput" value="02026">
                     </div>
-                </div>
-
-                <div class="admin-card">
-                    <div class="section-header">Accounts Database (JSON)</div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">سيتم تحديث قاعدة بيانات الحسابات تلقائياً لجميع المستخدمين:</div>
-                    <textarea id="accDbInput" class="json-input" placeholder='{"12345": {"n": "Company", "p": "Product"}}'></textarea>
-                </div>
-
-                <div class="admin-card" style="flex: 1;">
-                    <div class="section-header">Holiday Management</div>
-                    <div class="flex-row">
-                        <input type="text" id="newHolDate" placeholder="Date (e.g. 29/1/2026)" dir="ltr">
-                        <button class="btn-secondary" onclick="addAdminHol()">Add</button>
-                    </div>
-                    <div id="adminHolsList" class="list-container"></div>
+                    
+                    <button class="btn-save-global" onclick="saveSystemSettings()">Deploy Security Changes</button>
+                    <div style="clear: both;"></div>
                 </div>
             </div>
-        </main>
 
-        <footer>
-            <button class="btn-primary" onclick="saveStatus()">Deploy Changes to System</button>
-        </footer>
+            <!-- Tab: Holidays -->
+            <div id="tab-holidays" class="tab-content">
+                <div class="stat-card" style="max-width: 600px;">
+                    <h3 style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Skipped Dates Manager</h3>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="newHolDate" placeholder="Format: DD/MM/YYYY">
+                        <button class="btn btn-primary" onclick="addHoliday()" style="height: 48px;">Add</button>
+                    </div>
+                    
+                    <div id="adminHolsList" style="margin-top: 15px;"></div>
+                    
+                    <button class="btn-save-global" onclick="saveSystemSettings()">Save Holidays</button>
+                    <div style="clear: both;"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div class="modal-overlay" id="msgModal">
+        <div class="modal-box">
+            <div class="modal-title">
+                <span id="msgModalTitle">Send Message</span>
+                <span class="modal-close" onclick="closeModal()">✖</span>
+            </div>
+            <textarea id="msgContent" placeholder="Type your message here... It will pop up on the user's screen immediately."></textarea>
+            <button class="btn btn-primary" style="width: 100%;" onclick="sendDirectMessage()">Send Message</button>
+        </div>
     </div>
 
     <script>
-        const DASHBOARD_PASSWORD = "Adel_Admin2026"; 
-
-        document.getElementById('authPassInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') verifyAdmin();
-        });
-
-        function verifyAdmin() {
-            const inputVal = document.getElementById('authPassInput').value;
-            if (inputVal === DASHBOARD_PASSWORD) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-dashboard').style.display = 'flex';
-                initDashboard();
-                showSystemToast("تم تسجيل الدخول بنجاح", "success");
-            } else {
-                showSystemToast("كلمة المرور غير صحيحة", "error");
-                document.getElementById('authPassInput').style.borderColor = "var(--danger)";
-            }
-        }
-
-        const dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
-        const devicesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices.json";
+        const dbStatusUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
+        const dbDevicesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices.json";
+        const dbMessagesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/messages.json";
         
-        const powerSwitch = document.getElementById('powerSwitch');
-        const statusText = document.getElementById('statusText');
-        const statusDot = document.getElementById('statusDot');
-        const passInput = document.getElementById('passInput');
-        const accDbInput = document.getElementById('accDbInput');
-        const holsListDiv = document.getElementById('adminHolsList');
-        const newHolDate = document.getElementById('newHolDate');
+        let blockedDevices = [];
+        let currentHolidays = [];
+        let allMessages = {};
+        let targetMsgUser = "";
+
+        // UI Functions
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
         
-        let currentHolidays = []; 
-        let blockedDevices = []; 
-        let liveSyncInterval; 
-
-        function showSystemToast(message, type = 'success') {
-            const existing = document.getElementById('sys-toast');
-            if (existing) existing.remove();
-
-            const toast = document.createElement('div');
-            toast.id = 'sys-toast';
-            toast.className = `system-toast ${type === 'success' ? 'toast-success' : 'toast-error'}`;
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            el.classList.add('active');
             
-            const prefix = type === 'success' ? 'SUCCESS:' : 'ERROR:';
-            toast.innerHTML = `<span style="font-weight:900; opacity:0.8; font-family:monospace;">${prefix}</span> <span>${message}</span>`;
-            
-            document.body.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
+            const titles = { 'monitoring': 'Live Monitoring', 'security': 'Security Settings', 'holidays': 'Holidays Manager' };
+            document.getElementById('pageTitle').innerText = titles[tabId];
         }
 
-        function initDashboard() {
-            fetch(dbUrl).then(r => r.json()).then(data => {
-                if(data !== null) {
-                    if (typeof data === 'boolean') { powerSwitch.checked = data; } 
-                    else {
-                        powerSwitch.checked = (data.isActive !== false);
-                        if(data.password) passInput.value = data.password;
-                        if(data.holidays) currentHolidays = data.holidays;
-                        if(data.blockedDevices) blockedDevices = data.blockedDevices;
-                        // قراءة القاموس من الفايربيس لو موجود
-                        if(data.accDb) accDbInput.value = JSON.stringify(data.accDb, null, 2);
-                    }
-                }
-                updateText();
-                renderAdminHols();
-            });
-
-            powerSwitch.addEventListener('change', updateText);
-            fetchActiveDevices();
-            liveSyncInterval = setInterval(fetchActiveDevices, 3000);
+        function openMessageModal(deviceId, userName) {
+            targetMsgUser = deviceId;
+            document.getElementById('msgModalTitle').innerText = "Message to: " + userName;
+            document.getElementById('msgContent').value = "";
+            document.getElementById('msgModal').classList.add('active');
         }
+        function closeModal() { document.getElementById('msgModal').classList.remove('active'); }
 
-        function updateText() {
-            if(powerSwitch.checked) {
-                statusText.innerText = "System Active";
-                statusText.style.color = "#fff";
-                statusDot.className = "dot online";
-            } else {
-                statusText.innerText = "System Offline";
-                statusText.style.color = "var(--text-secondary)";
-                statusDot.className = "dot offline";
-            }
-        }
-
-        function fetchActiveDevices() {
-            fetch(devicesUrl).then(r => r.json()).then(data => {
-                let onlineCount = 0;
-                let listHtml = '';
-                let now = new Date().getTime();
-                
+        // Fetch System Settings
+        function fetchSettings() {
+            fetch(dbStatusUrl).then(r => r.json()).then(data => {
                 if(data) {
-                    for(let id in data) {
-                        let isBlocked = blockedDevices.includes(id);
-                        if((now - data[id].lastSeen <= 15000) || isBlocked) { 
-                            if(!isBlocked) onlineCount++;
-                            
-                            let dotClass = isBlocked ? "offline" : "online";
-                            let btnHtml = isBlocked 
-                                ? `<button class="btn-action btn-unblock" onclick="toggleBlock('${id}')">Unblock</button>`
-                                : `<button class="btn-action btn-block" onclick="toggleBlock('${id}')">Block</button>`;
+                    document.getElementById('powerSwitch').checked = (data.isActive !== false);
+                    document.getElementById('passInput').value = data.password || '02026';
+                    blockedDevices = data.blockedDevices || [];
+                    currentHolidays = data.holidays || [];
+                    renderHols();
+                }
+            });
+        }
 
-                            listHtml += `
-                                <div class='list-item' style="${isBlocked ? 'opacity:0.5;' : ''}">
-                                    <div class="device-info">
-                                        <span class="device-id"><span class="dot ${dotClass}"></span> ${id}</span>
-                                        <span class="device-os">${data[id].os || 'Unknown OS'}</span>
-                                    </div>
-                                    ${btnHtml}
-                                </div>`;
+        // Fetch Live Devices & Messages
+        function fetchData() {
+            Promise.all([
+                fetch(dbDevicesUrl).then(r => r.json()),
+                fetch(dbMessagesUrl).then(r => r.json())
+            ]).then(([devices, messages]) => {
+                allMessages = messages || {};
+                renderDevices(devices || {});
+                
+                const d = new Date();
+                const sync = document.getElementById('syncStatus');
+                sync.innerHTML = `<span style="display:inline-block;width:8px;height:8px;background:var(--success);border-radius:50%;box-shadow:0 0 5px var(--success);"></span> Sync: ${d.toLocaleTimeString()}`;
+                sync.className = "sync-status";
+            }).catch(() => {
+                const sync = document.getElementById('syncStatus');
+                sync.innerHTML = `⚠️ Offline`;
+                sync.className = "sync-status offline";
+            });
+        }
+
+        function renderDevices(devices) {
+            const grid = document.getElementById('devices-grid');
+            let onlineCount = 0, totalClosed = 0;
+            let now = Date.now();
+            let html = '';
+
+            Object.keys(devices).forEach(id => {
+                const dev = devices[id];
+                const isBlocked = blockedDevices.includes(id);
+                const isOnline = (now - dev.lastSeen) < 15000;
+
+                if (isOnline || isBlocked) {
+                    if (isOnline && !isBlocked) onlineCount++;
+                    const count = parseInt(dev.count || 0);
+                    if (isOnline && !isBlocked) totalClosed += count;
+
+                    const userName = dev.user || 'Unknown User';
+                    const initial = userName.charAt(0).toUpperCase();
+                    
+                    const blockBtn = isBlocked 
+                        ? `<button class="btn btn-success" onclick="toggleBlock('${id}')">Unblock</button>` 
+                        : `<button class="btn btn-danger" onclick="toggleBlock('${id}')">Block</button>`;
+                    
+                    // Check message status
+                    const msgData = allMessages[id];
+                    let msgHtml = `<button class="btn btn-msg" onclick="openMessageModal('${id}', '${userName}')">💬 Message</button>`;
+                    let replyHtml = '';
+                    
+                    if (msgData) {
+                        if (msgData.reply) {
+                            msgHtml = `<button class="btn btn-clear" onclick="clearMessage('${id}')">Clear Conversation</button>`;
+                            replyHtml = `
+                                <div class="reply-alert">
+                                    <span>🔔 Reply from ${userName}:</span>
+                                    ${msgData.reply}
+                                </div>
+                            `;
+                        } else {
+                            msgHtml = `<button class="btn btn-msg" style="opacity:0.5; cursor:not-allowed;">⏳ Msg Sent...</button>
+                                       <button class="btn btn-clear" style="padding: 10px; margin-left: 5px;" onclick="clearMessage('${id}')">✖</button>`;
                         }
                     }
+
+                    html += `
+                        <div class="device-card ${isBlocked ? 'blocked' : ''}">
+                            <div class="user-header">
+                                <div class="avatar">${initial}</div>
+                                <div class="user-info">
+                                    <div class="user-name">${userName} ${isOnline && !isBlocked ? '<div class="status-dot"></div>' : ''}</div>
+                                    <div class="device-os">${dev.os || 'Win32'} | <span style="font-family:monospace;">${id}</span></div>
+                                </div>
+                            </div>
+                            
+                            <div class="info-row"><span class="info-label">Active Mode</span><span class="info-val" style="color:var(--accent);">${dev.currentMode || 'N/A'}</span></div>
+                            <div class="info-row"><span class="info-label">Last Scanned</span><span class="info-val">${dev.lastAwb || '-'}</span></div>
+                            <div class="info-row"><span class="info-label">Total Closed</span><span class="info-val" style="font-size:16px;">${count}</span></div>
+                            
+                            ${replyHtml}
+                            
+                            <div class="card-actions">
+                                ${blockBtn}
+                                ${msgHtml}
+                            </div>
+                        </div>
+                    `;
                 }
-                
-                document.getElementById('onlineCount').innerText = onlineCount;
-                document.getElementById('activeDevicesList').innerHTML = listHtml || '<div class="empty-state">No active devices found.</div>';
-            }).catch(()=>{});
-        }
-        
-        window.toggleBlock = function(id) {
-            if(blockedDevices.includes(id)) {
-                blockedDevices = blockedDevices.filter(d => d !== id); 
-            } else {
-                blockedDevices.push(id); 
-            }
-            saveStatus(true); 
-            fetchActiveDevices(); 
+            });
+
+            grid.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No active users.</div>';
+            document.getElementById('totalOnline').innerText = onlineCount;
+            document.getElementById('totalClosed').innerText = totalClosed;
         }
 
-        function addAdminHol() {
-            const val = newHolDate.value.trim();
-            if(val) { currentHolidays.push(val); newHolDate.value = ''; renderAdminHols(); }
+        // Messaging Functions
+        function sendDirectMessage() {
+            const text = document.getElementById('msgContent').value.trim();
+            if(!text) return;
+            
+            fetch(`https://matrix-tool-admin-default-rtdb.firebaseio.com/messages/${targetMsgUser}.json`, {
+                method: 'PUT',
+                body: JSON.stringify({ text: text, timestamp: Date.now() })
+            }).then(() => {
+                closeModal();
+                fetchData();
+            });
         }
-        function delAdminHol(index) {
-            currentHolidays.splice(index, 1); renderAdminHols();
+        
+        function clearMessage(id) {
+            fetch(`https://matrix-tool-admin-default-rtdb.firebaseio.com/messages/${id}.json`, { method: 'DELETE' })
+            .then(() => fetchData());
         }
-        function renderAdminHols() {
-            holsListDiv.innerHTML = '';
-            if(currentHolidays.length === 0) { holsListDiv.innerHTML = '<div class="empty-state">No holidays configured.</div>'; return; }
-            currentHolidays.forEach((hol, i) => {
-                holsListDiv.innerHTML += `
-                <div class='list-item'>
-                    <span class="del-btn" onclick="delAdminHol(${i})">REMOVE</span>
-                    <span class="hol-text">${hol}</span>
-                </div>`;
+
+        // Admin Settings Functions
+        function toggleBlock(id) {
+            if(blockedDevices.includes(id)) blockedDevices = blockedDevices.filter(d => d !== id);
+            else blockedDevices.push(id);
+            saveSystemSettings(true);
+            fetchData();
+        }
+
+        function addHoliday() {
+            const val = document.getElementById('newHolDate').value.trim();
+            if(val && confirm(`Add ${val} to holidays?`)) {
+                currentHolidays.push(val);
+                document.getElementById('newHolDate').value = '';
+                renderHols();
+            }
+        }
+        function delHol(idx) {
+            if(confirm("Remove this date?")) {
+                currentHolidays.splice(idx, 1);
+                renderHols();
+            }
+        }
+        function renderHols() {
+            const div = document.getElementById('adminHolsList');
+            div.innerHTML = currentHolidays.map((h, i) => `<div class="hol-tag">${h} <span onclick="delHol(${i})">✖</span></div>`).join('');
+        }
+
+        function saveSystemSettings(silent = false) {
+            const config = {
+                isActive: document.getElementById('powerSwitch').checked,
+                password: document.getElementById('passInput').value,
+                holidays: currentHolidays,
+                blockedDevices: blockedDevices
+            };
+            fetch(dbStatusUrl, { method: 'PUT', body: JSON.stringify(config) }).then(() => {
+                if(!silent) alert("Settings deployed to all users!");
             });
         }
 
-        function saveStatus(silent = false) {
-            let parsedAccDb = {};
-            try {
-                let rawVal = accDbInput.value.trim();
-                if(rawVal) parsedAccDb = JSON.parse(rawVal);
-            } catch(e) {
-                showSystemToast("خطأ في صيغة JSON في قاعدة الحسابات!", "error");
-                return;
-            }
-
-            const config = {
-                isActive: powerSwitch.checked,
-                password: passInput.value,
-                holidays: currentHolidays,
-                blockedDevices: blockedDevices,
-                accDb: parsedAccDb, // إرسال القاموس للفايربيس
-                adminKey: 'Adel_Matrix_2026' 
-            };
-            fetch(dbUrl, { method: 'PUT', body: JSON.stringify(config) })
-            .then(response => {
-                if(!response.ok) throw new Error("Unauthorized");
-                if(!silent) showSystemToast("System configuration updated successfully.", "success"); 
-            })
-            .catch(() => { if(!silent) showSystemToast("Failed to connect or unauthorized.", "error"); });
-        }
+        fetchSettings();
+        fetchData();
+        setInterval(fetchData, 3000);
     </script>
 </body>
-</html>
+</html> 
