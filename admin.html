@@ -1,372 +1,909 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyBag - System Administration</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <title>SkyBag - Admin Command Center</title>
     <style>
-        :root {
-            --bg-main: #0b1120;
-            --bg-card: #111827;
-            --border-color: #1f2937;
-            --text-primary: #f9fafb;
-            --text-secondary: #9ca3af;
-            --accent-blue: #0284c7;
-            --accent-hover: #0369a1;
-            --danger: #dc2626;
-            --success: #16a34a;
-        }
+        /* ==========================================
+           1. PREMIUM THEME VARIABLES & RESET
+           ========================================== */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
+        :root { 
+            --bg-base: #0a0a0a; 
+            --bg-sidebar: #111111; 
+            --bg-card: #171717; 
+            --border: #262626; 
+            --border-hover: #404040;
+            --accent: #3b82f6; 
+            --accent-hover: #2563eb; 
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --warning: #f59e0b; 
+            --text-main: #f5f5f5; 
+            --text-muted: #a3a3a3; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
+        
         body { 
-            background-color: var(--bg-main); 
-            color: var(--text-primary); 
-            font-family: 'Tajawal', sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start;
-            min-height: 100vh; 
-            margin: 0; 
-            padding: 40px 20px; 
-            box-sizing: border-box; 
+            display: grid; 
+            grid-template-columns: 260px 1fr; 
+            grid-template-rows: 100vh;
+            background-color: var(--bg-base); 
+            color: var(--text-main); 
+            overflow: hidden; 
+            transition: grid-template-columns 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        body.sidebar-collapsed { grid-template-columns: 76px 1fr; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #404040; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ==========================================
+           2. ADMIN LOGIN OVERLAY
+           ========================================== */
+        #admin-login-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg-base); z-index: 999999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .login-box {
+            background: var(--bg-card); border: 1px solid var(--border);
+            padding: 40px; border-radius: 16px; width: 380px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        .login-logo { font-size: 48px; margin-bottom: 10px; }
+        .login-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+        .login-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 30px; }
+        .login-input { 
+            width: 100%; padding: 14px; background: var(--bg-base); 
+            border: 1px solid var(--border); border-radius: 8px; 
+            color: #fff; font-size: 20px; letter-spacing: 4px; text-align: center; 
+            margin-bottom: 20px; transition: 0.2s;
+        }
+        .login-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
+        .login-btn {
+            width: 100%; padding: 14px; background: #fff; color: #000;
+            border: none; border-radius: 8px; font-weight: 700; font-size: 15px;
+            cursor: pointer; transition: 0.2s;
+        }
+        .login-btn:hover { background: #e5e5e5; transform: translateY(-2px); }
+
+        /* ==========================================
+           3. SIDEBAR
+           ========================================== */
+        .sidebar { 
+            background: var(--bg-sidebar); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; z-index: 100; overflow: hidden;
         }
         
-        .dashboard-wrapper { 
-            width: 100%; 
-            max-width: 1100px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 25px; 
+        .sidebar-header { 
+            height: 76px; padding: 0 20px; border-bottom: 1px solid var(--border); 
+            display: flex; align-items: center; justify-content: space-between; white-space: nowrap;
+        }
+        .brand { font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .brand-icon { color: var(--accent); font-size: 20px; }
+        
+        body.sidebar-collapsed .brand-text { display: none; }
+        body.sidebar-collapsed .sidebar-header { justify-content: center; padding: 0; }
+        
+        .toggle-btn { 
+            background: transparent; border: 1px solid var(--border); border-radius: 8px; 
+            color: var(--text-muted); cursor: pointer; width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .toggle-btn:hover { color: #fff; background: var(--border); }
+        body.sidebar-collapsed .toggle-btn { margin: 0; border-color: transparent; }
+        
+        .nav-menu { flex: 1; padding: 24px 12px; display: flex; flex-direction: column; gap: 6px; }
+        .nav-item { 
+            padding: 12px 14px; display: flex; align-items: center; gap: 14px; 
+            color: var(--text-muted); text-decoration: none; cursor: pointer; border-radius: 8px; 
+            font-weight: 500; font-size: 14px; white-space: nowrap; transition: 0.2s; border: 1px solid transparent; 
+        }
+        .nav-item:hover { color: #fff; background: rgba(255,255,255,0.03); }
+        .nav-item.active { 
+            background: rgba(59, 130, 246, 0.1); color: var(--accent); 
+            border-color: rgba(59, 130, 246, 0.2); font-weight: 600;
+        }
+        .nav-icon { font-size: 18px; min-width: 24px; text-align: center; }
+        
+        body.sidebar-collapsed .nav-text { display: none; }
+        body.sidebar-collapsed .nav-item { justify-content: center; padding: 14px 0; }
+
+        /* ==========================================
+           4. MAIN LAYOUT & HEADER
+           ========================================== */
+        .main-wrapper { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        .top-bar { 
+            height: 76px; padding: 0 40px; background: var(--bg-body); border-bottom: 1px solid var(--border); 
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10;
         }
         
-        /* Header */
-        header { border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 10px; }
-        .header-title { font-size: 28px; font-weight: 900; color: #fff; margin: 0 0 5px 0; letter-spacing: 1px; }
-        .header-title span { color: var(--accent-blue); }
-        .header-subtitle { font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px;}
-
-        /* Grid Layout */
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        /* Admin Cards */
-        .admin-card { 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-color); 
-            border-radius: 12px; 
-            padding: 25px; 
-            display: flex;
-            flex-direction: column;
-        }
+        .page-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.5px;}
         
-        .section-header { 
-            font-size: 15px; 
-            color: #fff; 
-            font-weight: 700; 
-            border-bottom: 1px solid var(--border-color); 
-            padding-bottom: 15px; 
-            margin-bottom: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            text-transform: uppercase;
+        .sync-status { 
+            font-size: 12px; font-weight: 600; background: rgba(16, 185, 129, 0.1); color: var(--success); 
+            padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px; 
+            border: 1px solid rgba(16, 185, 129, 0.2); 
         }
+        .sync-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px rgba(16,185,129,0.5);}
+        
+        .sync-status.offline { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
+        .sync-status.offline .sync-dot { background: var(--danger); box-shadow: none; }
 
-        .badge-count { background: rgba(2, 132, 199, 0.2); color: var(--accent-blue); padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 900; border: 1px solid rgba(2, 132, 199, 0.3);}
+        .content-scroll { flex: 1; overflow-y: auto; padding: 40px; }
+        .content-container { max-width: 1300px; margin: 0 auto; width: 100%; }
+        
+        .tab-content { display: none; opacity: 0; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out forwards; }
 
-        /* Master Switch */
-        .switch-wrapper { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); }
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        /* ==========================================
+           5. CARDS & GRIDS
+           ========================================== */
+        .grid-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px; }
+        
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: 0.3s; }
+        .stat-card:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
+        
+        .stat-header { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+        .stat-val { font-size: 40px; font-weight: 800; color: #fff; margin-top: 12px; line-height: 1; letter-spacing: -1px;}
+        .stat-val.highlight { color: var(--accent); }
+
+        .section-title { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 20px; }
+
+        .devices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px; }
+        
+        .device-card { 
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; 
+            padding: 20px; transition: 0.3s ease; display: flex; flex-direction: column;
+        }
+        .device-card:hover { border-color: var(--border-hover); transform: translateY(-3px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.8); }
+        .device-card.blocked { opacity: 0.5; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+        
+        .user-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .avatar { width: 46px; height: 46px; background: var(--bg-body); border: 1px solid var(--border); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 16px; color: var(--accent); }
+        .user-info { flex: 1; overflow: hidden; }
+        .user-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #fff; margin-bottom: 4px;}
+        .device-os { font-size: 12px; color: var(--text-muted); }
+        .status-dot-user { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+        .data-panel { background: var(--bg-body); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px;}
+        .info-row:last-child { margin-bottom: 0; }
+        .info-label { color: var(--text-muted); }
+        .info-val { font-weight: 600; color: #fff; }
+        
+        .reply-alert { background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--warning); padding: 12px; border-radius: 0 6px 6px 0; margin-top: 16px; font-size: 13px; }
+        .reply-alert span { color: var(--warning); display: block; margin-bottom: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;}
+
+        /* ==========================================
+           6. BUTTONS & CONTROLS
+           ========================================== */
+        .card-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-body); color: var(--text-main); font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.2s; text-align: center;}
+        .btn:hover { background: var(--border); }
+        .btn-danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--danger); }
+        .btn-success { color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
+        .btn-success:hover { background: rgba(16, 185, 129, 0.1); border-color: var(--success); }
+        .btn-msg { color: var(--accent); border-color: rgba(59, 130, 246, 0.3); }
+        .btn-msg:hover { background: rgba(59, 130, 246, 0.1); border-color: var(--accent); }
+        .btn-clear { width: 100%; margin-top: 10px; }
+
+        .btn-primary { background: #fff; color: #000; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; width: 100%; }
+        .btn-primary:hover { background: #e5e5e5; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(255,255,255,0.1); }
+
+        /* ==========================================
+           7. FORMS & INPUTS
+           ========================================== */
+        input[type="text"], input[type="password"], textarea { 
+            width: 100%; padding: 14px 16px; background: var(--bg-body); 
+            border: 1px solid var(--border); border-radius: 8px; color: #fff; 
+            font-size: 14px; transition: 0.2s; margin-bottom: 20px;
+        }
+        input[type="text"]:focus, input[type="password"]:focus, textarea:focus { outline: none; border-color: var(--border-hover); background: var(--bg-card);}
+        .json-editor { height: 400px; color: var(--success); }
+
+        .switch-container { display: flex; justify-content: space-between; align-items: center; background: var(--bg-body); padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 24px;}
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 26px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-hover); border-radius: 30px; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #fff; border-radius: 50%; transition: .3s; }
         input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(24px); }
-        
-        .status-indicator { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .dot.online { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
-        .dot.offline { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
+        input:checked + .slider:before { transform: translateX(20px); }
 
-        /* Inputs & Buttons */
-        .input-group { margin-bottom: 20px; }
-        .input-label { display: block; color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
-        input[type="text"] { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); background: #030712; color: #fff; text-align: center; font-size: 16px; font-weight: bold; font-family: monospace; box-sizing: border-box; transition: 0.3s; }
-        input[type="text"]:focus { outline: none; border-color: var(--accent-blue); }
-        
-        .btn-primary { background: var(--accent-blue); color: white; border: none; padding: 18px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; font-family: 'Tajawal', sans-serif; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;}
-        .btn-primary:hover { background: var(--accent-hover); }
-        
-        /* Lists */
-        .flex-row { display: flex; gap: 10px; }
-        .flex-row input { margin-bottom: 0; text-align: right; padding-right: 15px; font-family: 'Tajawal', sans-serif;}
-        .btn-secondary { background: #1f2937; color: white; border: 1px solid #374151; padding: 0 25px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; font-family: 'Tajawal', sans-serif;}
-        .btn-secondary:hover { background: #374151; }
-        
-        .list-container { flex: 1; min-height: 220px; max-height: 280px; overflow-y: auto; padding-right: 5px; margin-top: 15px;}
-        .list-container::-webkit-scrollbar { width: 4px; }
-        .list-container::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
-        
-        .list-item { display: flex; justify-content: space-between; align-items: center; background: #030712; padding: 12px 15px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border-color); transition: 0.2s;}
-        .list-item:hover { border-color: #374151; }
-        
-        .device-info { display: flex; flex-direction: column; text-align: left; direction: ltr; }
-        .device-id { font-weight: bold; font-size: 14px; color: #e5e7eb; font-family: monospace; display: flex; align-items: center; gap: 8px;}
-        .device-os { font-size: 11px; color: var(--text-secondary); margin-top: 4px;}
-        
-        .btn-action { border: 1px solid transparent; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: 'Tajawal', sans-serif; }
-        .btn-block { background: rgba(220, 38, 38, 0.1); color: var(--danger); border-color: rgba(220, 38, 38, 0.2); }
-        .btn-block:hover { background: var(--danger); color: #fff; }
-        .btn-unblock { background: rgba(22, 163, 74, 0.1); color: var(--success); border-color: rgba(22, 163, 74, 0.2); }
-        .btn-unblock:hover { background: var(--success); color: #fff; }
-        
-        .del-btn { color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: bold; padding-left: 15px; transition: 0.2s;}
-        .del-btn:hover { color: var(--danger); }
-        .hol-text { font-family: monospace; font-weight: bold; font-size: 14px; color: #e5e7eb;}
-        .empty-state { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 30px 10px; }
+        /* ==========================================
+           8. MODALS & TOASTS
+           ========================================== */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; justify-content: center; align-items: center; opacity: 0; transition: 0.3s; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 420px; padding: 24px; transform: scale(0.95); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px -12px rgba(0,0,0,1); }
+        .modal-overlay.active .modal-box { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #fff;}
+        .modal-close { cursor: pointer; color: var(--text-muted); font-size: 24px; transition: 0.2s; line-height: 1; }
+        .modal-close:hover { color: var(--danger); }
 
-        /* Custom System Notifications */
-        .system-toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #111827;
-            border-left: 4px solid var(--accent-blue);
-            color: #fff;
-            padding: 16px 24px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 99999;
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            pointer-events: none;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            font-family: 'Tajawal', sans-serif;
-        }
+        .system-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--accent); color: #fff; padding: 16px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px; z-index: 99999; opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .system-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast-success { border-left-color: var(--success); }
         .toast-error { border-left-color: var(--danger); }
 
-        @media (max-width: 768px) {
-            .grid-container { grid-template-columns: 1fr; gap: 20px;}
-            .list-container { min-height: 180px; }
-            .system-toast { width: 85%; }
+        /* ==========================================
+           9. HOLIDAYS MANAGER (CALENDAR + VERTICAL LIST)
+           ========================================== */
+        .holidays-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
         }
+        @media (max-width: 850px) {
+            .holidays-wrapper { grid-template-columns: 1fr; }
+        }
+
+        .cal-box, .list-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Calendar Styles */
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .cal-btn { background: transparent; border: 1px solid var(--border); color: #fff; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 16px;}
+        .cal-btn:hover { background: var(--border); }
+        .cal-title { font-weight: 700; font-size: 16px; color: #fff;}
+        
+        .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600;}
+        .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        
+        .cal-day { 
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center; 
+            font-size: 14px; border-radius: 8px; cursor: pointer; transition: 0.2s; 
+            color: var(--text-main); font-weight: 500; font-family: 'JetBrains Mono', monospace;
+            border: 1px solid transparent;
+        }
+        .cal-day:hover:not(.empty) { border-color: var(--border); background: rgba(255,255,255,0.05); }
+        .cal-day.selected { 
+            background: rgba(239, 68, 68, 0.1); color: var(--danger); 
+            border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 700; 
+        }
+        .cal-day.selected:hover { background: rgba(239, 68, 68, 0.2); }
+        .cal-day.empty { cursor: default; }
+
+        /* Vertical List Styles */
+        .list-header { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .hol-list-vertical { 
+            display: flex; flex-direction: column; gap: 10px; 
+            flex: 1; overflow-y: auto; max-height: 310px; padding-right: 4px;
+        }
+        
+        .hol-item-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: var(--bg-body); border: 1px solid var(--border); 
+            padding: 12px 16px; border-radius: 8px; transition: 0.2s;
+        }
+        .hol-item-row:hover { border-color: var(--border-hover); }
+        .hol-item-date { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #fff;}
+        
+        .hol-item-del { 
+            background: rgba(239, 68, 68, 0.1); color: var(--danger); 
+            border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; 
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; transition: 0.2s; font-size: 14px;
+        }
+        .hol-item-del:hover { background: var(--danger); color: #fff; }
+        
+        .empty-holidays { text-align: center; color: var(--text-muted); padding: 40px 20px; font-size: 13px; line-height: 1.6;}
     </style>
 </head>
 <body>
 
-    <div class="dashboard-wrapper">
-        <header>
-            <h1 class="header-title">SkyBag <span>Admin</span></h1>
-            <div class="header-subtitle">Matrix Tool Admin</div>
-        </header>
-
-        <main class="grid-container">
-            
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                
-                <div class="admin-card">
-                    <div class="section-header">System Status</div>
-                    <div class="switch-wrapper">
-                        <div class="status-indicator" id="statusIndicator">
-                            <span class="dot online" id="statusDot"></span>
-                            <span id="statusText">System Active</span>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="powerSwitch" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="admin-card" style="flex: 1;">
-                    <div class="section-header">
-                        <span>Connected Devices</span>
-                        <span class="badge-count" id="onlineCount">0</span>
-                    </div>
-                    <div id="activeDevicesList" class="list-container">
-                        <div class="empty-state">Scanning for devices...</div>
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                
-                <div class="admin-card">
-                    <div class="section-header">Security Settings</div>
-                    <div class="input-group">
-                        <label class="input-label">System Access Password</label>
-                        <input type="text" id="passInput" value="02026">
-                    </div>
-                </div>
-
-                <div class="admin-card" style="flex: 1;">
-                    <div class="section-header">Holiday Management</div>
-                    <div class="flex-row">
-                        <input type="text" id="newHolDate" placeholder="Date (e.g. 29/1/2026)" dir="ltr">
-                        <button class="btn-secondary" onclick="addAdminHol()">Add</button>
-                    </div>
-                    <div id="adminHolsList" class="list-container"></div>
-                </div>
-
-            </div>
-        </main>
-
-        <footer>
-            <button class="btn-primary" onclick="saveStatus()">Deploy Changes to System</button>
-        </footer>
+    <!-- ==========================================
+         ADMIN LOGIN SCREEN (Double Security Layer 1)
+         ========================================== -->
+    <div id="admin-login-screen">
+        <div class="login-box">
+            <div class="login-logo">⚡</div>
+            <div class="login-title">Admin Access</div>
+            <div class="login-sub">Enter your master password to access the dashboard.</div>
+            <input type="password" id="admin-pass-input" class="login-input" placeholder="••••••••">
+            <button class="login-btn" onclick="verifyAdminLogin()">Login to Dashboard</button>
+        </div>
     </div>
 
+    <!-- ==========================================
+         SIDEBAR
+         ========================================== -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <span class="brand-icon">⚡</span> 
+                <span class="brand-text">Admin Panel</span>
+            </div>
+            <button class="toggle-btn" onclick="toggleSidebar()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="switchTab('monitoring', this)">
+                <span class="nav-icon">📊</span> <span class="nav-text">Live Monitoring</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('security', this)">
+                <span class="nav-icon">🔐</span> <span class="nav-text">Security Settings</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('database', this)">
+                <span class="nav-icon">🗄️</span> <span class="nav-text">Accounts Database</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('holidays', this)">
+                <span class="nav-icon">📅</span> <span class="nav-text">Skipped Dates</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MAIN CONTENT AREA
+         ========================================== -->
+    <div class="main-wrapper">
+        <div class="top-bar">
+            <div class="page-title" id="pageTitle">Live Monitoring</div>
+            <div class="sync-status" id="syncStatus">
+                <span class="sync-dot"></span> Sync Active
+            </div>
+        </div>
+
+        <div class="content-scroll">
+            <div class="content-container">
+                
+                <!-- Tab: Monitoring -->
+                <div id="tab-monitoring" class="tab-content active">
+                    <div class="grid-overview">
+                        <div class="stat-card">
+                            <div class="stat-header">Total Users Online</div>
+                            <div class="stat-val mono" id="totalOnline">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">Total Closed Today</div>
+                            <div class="stat-val mono highlight" id="totalClosed">0</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Active Devices</div>
+                    <div class="devices-grid" id="devices-grid">
+                        <!-- Loaded dynamically via smart DOM updater -->
+                    </div>
+                </div>
+
+                <!-- Tab: Security -->
+                <div id="tab-security" class="tab-content">
+                    <div class="stat-card" style="max-width: 600px; margin: 0 auto;">
+                        <div class="section-title" style="margin-bottom: 24px;">Master Control</div>
+                        
+                        <div class="switch-container">
+                            <div>
+                                <div style="font-weight: 600; font-size: 15px; color: #fff;">System Power Status</div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Toggle to globally disable tools for all users.</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="powerSwitch" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Master Passcode (Tools Key)</div>
+                            <input type="text" id="passInput" value="02026" class="mono" style="font-size: 20px; letter-spacing: 4px; text-align: center;">
+                        </div>
+                        
+                        <button class="btn-primary" onclick="saveSystemSettings()">Deploy Security Changes</button>
+                    </div>
+                </div>
+
+                <!-- Tab: Database (Double Security Layer 2) -->
+                <div id="tab-database" class="tab-content">
+                    <div class="stat-card" style="max-width: 900px; margin: 0 auto; min-height: 400px; display: flex; flex-direction: column; justify-content: center;">
+                        
+                        <!-- Lock Screen inside Database Tab -->
+                        <div id="db-lock-screen" style="text-align: center;">
+                            <div style="font-size: 40px; margin-bottom: 15px;">🔒</div>
+                            <div class="section-title" style="border:none; margin-bottom:10px;">Restricted Area</div>
+                            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">Enter database master key to view or edit accounts.</p>
+                            <input type="password" id="db-pass-input" placeholder="••••••••" style="max-width: 300px; text-align: center; margin: 0 auto 20px; display: block; font-size: 20px; letter-spacing: 4px;">
+                            <button class="btn-primary" style="max-width: 300px;" onclick="unlockDatabase()">Decrypt Database</button>
+                        </div>
+
+                        <!-- Database Editor (Hidden until unlocked) -->
+                        <div id="db-content" style="display: none; height: 100%;">
+                            <div class="section-title">Accounts Database (JSON)</div>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">
+                                Map Account Numbers to Company Names and Products. Ensure perfect JSON format.
+                            </p>
+                            <textarea id="jsonInput" class="json-editor mono" placeholder='{ "123456": { "n": "Vodafone", "p": "Credit Card", "sd": true } }'></textarea>
+                            <button class="btn-primary" onclick="saveSystemSettings()">Deploy Database Mapping</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Holidays (Brand New Interactive Calendar & Vertical List) -->
+                <div id="tab-holidays" class="tab-content">
+                    <div class="section-title" style="max-width: 900px; margin: 0 auto 20px;">Skipped Dates Manager</div>
+                    
+                    <div class="holidays-wrapper">
+                        <!-- Calendar Box -->
+                        <div class="cal-box">
+                            <div class="cal-header">
+                                <button class="cal-btn" onclick="changeMonth(-1)">&#8249;</button>
+                                <div class="cal-title" id="cal-title">August 2026</div>
+                                <button class="cal-btn" onclick="changeMonth(1)">&#8250;</button>
+                            </div>
+                            <div class="cal-weekdays">
+                                <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                            </div>
+                            <div class="cal-days" id="cal-days">
+                                <!-- Calendar days injected via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Selected Dates List Box -->
+                        <div class="list-box">
+                            <div class="list-header">Selected Exclusions</div>
+                            <div class="hol-list-vertical" id="adminHolsList">
+                                <!-- List items injected via JS -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="max-width: 900px; margin: 24px auto 0;">
+                        <button class="btn-primary" onclick="saveSystemSettings()">Save Holiday Configuration</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div class="modal-overlay" id="msgModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title" id="msgModalTitle">Send Message</span>
+                <span class="modal-close" onclick="closeModal()">×</span>
+            </div>
+            <textarea id="msgContent" placeholder="Type your message here..."></textarea>
+            <button class="btn-primary" onclick="sendDirectMessage()">Send Message</button>
+        </div>
+    </div>
+
+    <!-- Core Logic -->
     <script>
-        const dbUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
-        const devicesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices.json";
         
-        const powerSwitch = document.getElementById('powerSwitch');
-        const statusText = document.getElementById('statusText');
-        const statusDot = document.getElementById('statusDot');
-        const passInput = document.getElementById('passInput');
-        const holsListDiv = document.getElementById('adminHolsList');
-        const newHolDate = document.getElementById('newHolDate');
+        const ADMIN_PANEL_PASSWORD = "0282003";
+        const DATABASE_PASSWORD = "0282003";
+
+        const dbStatusUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
+        const dbDevicesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices.json";
+        const dbMessagesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus/messages.json";
         
-        let currentHolidays = []; 
-        let blockedDevices = []; 
+        let blockedDevices = [];
+        let currentHolidays = [];
+        let currentAccDb = {};
+        let allMessages = {};
+        let targetMsgUser = "";
+
+        // Calendar State
+        let calDate = new Date();
+
+        // =========================================================================
+        // LOGIN & UNLOCK LOGIC
+        // =========================================================================
+        function verifyAdminLogin() {
+            const val = document.getElementById('admin-pass-input').value;
+            if(val === ADMIN_PANEL_PASSWORD) {
+                const screen = document.getElementById('admin-login-screen');
+                screen.style.opacity = '0';
+                setTimeout(() => screen.style.display = 'none', 500);
+            } else {
+                showSystemToast("Access Denied: Incorrect Password", "error");
+            }
+        }
+
+        document.getElementById('admin-pass-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') verifyAdminLogin();
+        });
+
+        function unlockDatabase() {
+            const val = document.getElementById('db-pass-input').value;
+            if(val === DATABASE_PASSWORD) {
+                document.getElementById('db-lock-screen').style.display = 'none';
+                document.getElementById('db-content').style.display = 'block';
+            } else {
+                showSystemToast("Decryption Failed: Incorrect Master Key", "error");
+            }
+        }
+        
+        document.getElementById('db-pass-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') unlockDatabase();
+        });
+
+        // =========================================================================
+        // UI & NAVIGATION FUNCTIONS
+        // =========================================================================
+        function toggleSidebar() { 
+            document.body.classList.toggle('sidebar-collapsed');
+        }
+        
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabId).classList.add('active');
+            el.classList.add('active');
+            
+            const titles = { 
+                'monitoring': 'Live Monitoring', 
+                'security': 'Security Settings', 
+                'database': 'Accounts Database', 
+                'holidays': 'Skipped Dates Manager' 
+            };
+            document.getElementById('pageTitle').innerText = titles[tabId];
+        }
 
         function showSystemToast(message, type = 'success') {
             const existing = document.getElementById('sys-toast');
             if (existing) existing.remove();
-
+            
             const toast = document.createElement('div');
             toast.id = 'sys-toast';
             toast.className = `system-toast ${type === 'success' ? 'toast-success' : 'toast-error'}`;
             
             const prefix = type === 'success' ? 'SUCCESS:' : 'ERROR:';
-            toast.innerHTML = `<span style="font-weight:900; opacity:0.8; font-family:monospace;">${prefix}</span> <span>${message}</span>`;
+            const color = type === 'success' ? 'var(--success)' : 'var(--danger)';
+            toast.innerHTML = `<strong style="color: ${color}; font-family: monospace;">${prefix}</strong> <span>${message}</span>`;
             
             document.body.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 2500);
         }
 
-        fetch(dbUrl).then(r => r.json()).then(data => {
-            if(data !== null) {
-                if (typeof data === 'boolean') { powerSwitch.checked = data; } 
-                else {
-                    powerSwitch.checked = (data.isActive !== false);
-                    if(data.password) passInput.value = data.password;
-                    if(data.holidays) currentHolidays = data.holidays;
-                    if(data.blockedDevices) blockedDevices = data.blockedDevices;
-                }
-            }
-            updateText();
-            renderAdminHols();
-        });
-
-        powerSwitch.addEventListener('change', updateText);
-
-        function updateText() {
-            if(powerSwitch.checked) {
-                statusText.innerText = "System Active";
-                statusText.style.color = "#fff";
-                statusDot.className = "dot online";
-            } else {
-                statusText.innerText = "System Offline";
-                statusText.style.color = "var(--text-secondary)";
-                statusDot.className = "dot offline";
-            }
-        }
-
-        function fetchActiveDevices() {
-            fetch(devicesUrl).then(r => r.json()).then(data => {
-                let onlineCount = 0;
-                let listHtml = '';
-                let now = new Date().getTime();
-                
-                if(data) {
-                    for(let id in data) {
-                        let isBlocked = blockedDevices.includes(id);
-                        if((now - data[id].lastSeen <= 15000) || isBlocked) { 
-                            if(!isBlocked) onlineCount++;
-                            
-                            let dotClass = isBlocked ? "offline" : "online";
-                            let btnHtml = isBlocked 
-                                ? `<button class="btn-action btn-unblock" onclick="toggleBlock('${id}')">Unblock</button>`
-                                : `<button class="btn-action btn-block" onclick="toggleBlock('${id}')">Block</button>`;
-
-                            listHtml += `
-                                <div class='list-item' style="${isBlocked ? 'opacity:0.5;' : ''}">
-                                    <div class="device-info">
-                                        <span class="device-id"><span class="dot ${dotClass}"></span> ${id}</span>
-                                        <span class="device-os">${data[id].os || 'Unknown OS'}</span>
-                                    </div>
-                                    ${btnHtml}
-                                </div>`;
-                        }
-                    }
-                }
-                
-                document.getElementById('onlineCount').innerText = onlineCount;
-                document.getElementById('activeDevicesList').innerHTML = listHtml || '<div class="empty-state">No active devices found.</div>';
-            }).catch(()=>{});
+        function openMessageModal(deviceId, userName) {
+            targetMsgUser = deviceId;
+            document.getElementById('msgModalTitle').innerText = `Message: ${userName}`;
+            document.getElementById('msgContent').value = "";
+            document.getElementById('msgModal').classList.add('active');
+            setTimeout(() => document.getElementById('msgContent').focus(), 100);
         }
         
-        setInterval(fetchActiveDevices, 3000);
+        function closeModal() { document.getElementById('msgModal').classList.remove('active'); }
+        document.getElementById('msgModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
-        window.toggleBlock = function(id) {
-            if(blockedDevices.includes(id)) {
-                blockedDevices = blockedDevices.filter(d => d !== id); 
-            } else {
-                blockedDevices.push(id); 
+        // =========================================================================
+        // CALENDAR & LIST LOGIC (NEW)
+        // =========================================================================
+        function cleanDateStr(str) {
+            return str.replace(/\/+/g, '/').trim();
+        }
+
+        function renderCalendar() {
+            const month = calDate.getMonth();
+            const year = calDate.getFullYear();
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('cal-title').innerText = `${monthNames[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            currentHolidays = currentHolidays.map(cleanDateStr).filter(h => h);
+
+            let html = '';
+            for (let i = 0; i < firstDay; i++) {
+                html += `<div class="cal-day empty"></div>`;
             }
-            saveStatus(true); 
-            fetchActiveDevices(); 
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                // Formatting date to match Tool's logic
+                const dateStr = `${i}/${month + 1}/${year}`;
+                const padStr = `${String(i).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+                
+                const isSelected = currentHolidays.includes(dateStr) || currentHolidays.includes(padStr);
+                const activeClass = isSelected ? 'selected' : '';
+                
+                html += `<div class="cal-day ${activeClass}" onclick="toggleDate('${dateStr}')">${i}</div>`;
+            }
+            
+            document.getElementById('cal-days').innerHTML = html;
+            renderHolsList();
         }
 
-        function addAdminHol() {
-            const val = newHolDate.value.trim();
-            if(val) { currentHolidays.push(val); newHolDate.value = ''; renderAdminHols(); }
+        function changeMonth(dir) {
+            calDate.setMonth(calDate.getMonth() + dir);
+            renderCalendar();
         }
-        function delAdminHol(index) {
-            currentHolidays.splice(index, 1); renderAdminHols();
+
+        function toggleDate(dateStr) {
+            dateStr = cleanDateStr(dateStr);
+            const parts = dateStr.split('/');
+            const padStr = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
+            
+            const idx1 = currentHolidays.indexOf(dateStr);
+            const idx2 = currentHolidays.indexOf(padStr);
+            
+            if (idx1 > -1) {
+                currentHolidays.splice(idx1, 1);
+            } else if (idx2 > -1) {
+                currentHolidays.splice(idx2, 1);
+            } else {
+                currentHolidays.push(dateStr);
+            }
+            
+            renderCalendar();
         }
-        function renderAdminHols() {
-            holsListDiv.innerHTML = '';
-            if(currentHolidays.length === 0) { holsListDiv.innerHTML = '<div class="empty-state">No holidays configured.</div>'; return; }
-            currentHolidays.forEach((hol, i) => {
-                holsListDiv.innerHTML += `
-                <div class='list-item'>
-                    <span class="del-btn" onclick="delAdminHol(${i})">REMOVE</span>
-                    <span class="hol-text">${hol}</span>
-                </div>`;
+
+        function renderHolsList() {
+            // Sort chronologically
+            const sorted = [...currentHolidays].sort((a, b) => {
+                const [d1, m1, y1] = a.split('/').map(Number);
+                const [d2, m2, y2] = b.split('/').map(Number);
+                return new Date(y1, m1-1, d1) - new Date(y2, m2-1, d2);
+            });
+
+            const div = document.getElementById('adminHolsList');
+            if(sorted.length === 0) {
+                div.innerHTML = '<div class="empty-holidays">No exclusions configured.<br>Click dates on the calendar to add.</div>';
+                return;
+            }
+            
+            div.innerHTML = sorted.map((h) => {
+                const [d, m, y] = h.split('/');
+                const dateObj = new Date(y, m-1, d);
+                // e.g. "May 29, 2026"
+                const niceDate = dateObj.toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' });
+                
+                return `
+                    <div class="hol-item-row">
+                        <span class="hol-item-date">${niceDate}</span>
+                        <button class="hol-item-del" onclick="toggleDate('${h}')" title="Remove">✖</button>
+                    </div>`;
+            }).join('');
+        }
+
+        // =========================================================================
+        // DATA SYNC & SMART DOM UPDATER
+        // =========================================================================
+        function fetchSettings() {
+            fetch(dbStatusUrl).then(r => r.json()).then(data => {
+                if(data) {
+                    document.getElementById('powerSwitch').checked = (data.isActive !== false);
+                    document.getElementById('passInput').value = data.password || '02026';
+                    blockedDevices = data.blockedDevices || [];
+                    currentHolidays = data.holidays || [];
+                    currentAccDb = data.accDb || {};
+                    if(Object.keys(currentAccDb).length > 0) {
+                        document.getElementById('jsonInput').value = JSON.stringify(currentAccDb, null, 4);
+                    }
+                    renderCalendar();
+                }
             });
         }
 
-        function saveStatus(silent = false) {
+        function fetchData() {
+            Promise.all([
+                fetch(dbDevicesUrl).then(r => r.json()),
+                fetch(dbMessagesUrl).then(r => r.json())
+            ]).then(([devices, messages]) => {
+                allMessages = messages || {};
+                renderDevices(devices || {});
+                
+                const sync = document.getElementById('syncStatus');
+                sync.innerHTML = `<span class="sync-dot"></span> Sync Active`;
+                sync.className = "sync-status";
+            }).catch(() => {
+                const sync = document.getElementById('syncStatus');
+                sync.innerHTML = `<span class="sync-dot" style="background:var(--danger);box-shadow:none;"></span> Offline`;
+                sync.className = "sync-status offline";
+            });
+        }
+
+        function buildMsgHtml(id, userName, msgData, isBlocked) {
+            const blockBtn = isBlocked 
+                ? `<button class="btn btn-success" onclick="toggleBlock('${id}')">Unblock</button>` 
+                : `<button class="btn btn-danger" onclick="toggleBlock('${id}')">Block</button>`;
+                
+            let msgHtml = `<button class="btn btn-msg" onclick="openMessageModal('${id}', '${userName}')">Message</button>`;
+            let replyHtml = '';
+            
+            if (msgData && !msgData.clear) {
+                if (msgData.reply) {
+                    msgHtml = `<button class="btn btn-clear" onclick="clearMessage('${id}')">Clear Chat</button>`;
+                    replyHtml = `<div class="reply-alert"><span>User Reply:</span>${msgData.reply}</div>`;
+                } else if (msgData.text) {
+                    msgHtml = `<button class="btn btn-msg" style="opacity:0.5; cursor:default;">Sent</button><button class="btn btn-clear" style="margin-top:0;" onclick="clearMessage('${id}')">✖</button>`;
+                }
+            }
+            return `${replyHtml}<div class="card-actions">${blockBtn}${msgHtml}</div>`;
+        }
+
+        function renderDevices(devices) {
+            const grid = document.getElementById('devices-grid');
+            let onlineCount = 0, totalClosed = 0, now = Date.now();
+            let activeIds = [];
+
+            Object.keys(devices).forEach(id => {
+                const dev = devices[id];
+                const isBlocked = blockedDevices.includes(id);
+                // تعتبر الأداة أونلاين لو بعتت بنج خلال 15 ثانية
+                const isOnline = (now - dev.lastSeen) < 15000;
+
+                if (isOnline || isBlocked) {
+                    activeIds.push(id);
+                    if (isOnline && !isBlocked) onlineCount++;
+                    const count = parseInt(dev.count || 0);
+                    if (isOnline && !isBlocked) totalClosed += count;
+
+                    const userName = dev.user || 'Unknown User';
+                    const initial = userName.charAt(0).toUpperCase();
+                    const msgData = allMessages[id];
+                    
+                    let existingCard = document.getElementById(`device-${id}`);
+
+                    if (!existingCard) {
+                        existingCard = document.createElement('div');
+                        existingCard.id = `device-${id}`;
+                        existingCard.className = `device-card ${isBlocked ? 'blocked' : ''}`;
+                        
+                        existingCard.innerHTML = `
+                            <div class="user-header">
+                                <div class="avatar">${initial}</div>
+                                <div class="user-info">
+                                    <div class="user-name">${userName} ${isOnline && !isBlocked ? '<div class="status-dot-user"></div>' : ''}</div>
+                                    <div class="device-os mono">${id}</div>
+                                </div>
+                            </div>
+                            <div class="data-panel">
+                                <div class="info-row"><span class="info-label">Active Mode</span><span class="info-val mono dev-mode">${dev.currentMode || 'N/A'}</span></div>
+                                <div class="info-row"><span class="info-label">Last Scanned</span><span class="info-val mono dev-awb">${dev.lastAwb || '-'}</span></div>
+                                <div class="info-row" style="margin-top:8px; padding-top:8px; border-top: 1px solid var(--border);">
+                                    <span class="info-label">Total Closed</span>
+                                    <span class="info-val mono dev-cnt" style="color:var(--success); font-size:16px;">${count}</span>
+                                </div>
+                            </div>
+                            <div class="msg-container" data-hash='${JSON.stringify({msg: msgData||{}, blk: isBlocked})}'>
+                                ${buildMsgHtml(id, userName, msgData, isBlocked)}
+                            </div>
+                        `;
+                        grid.appendChild(existingCard);
+                    } else {
+                        existingCard.className = `device-card ${isBlocked ? 'blocked' : ''}`;
+                        
+                        const awbEl = existingCard.querySelector('.dev-awb');
+                        if (awbEl && awbEl.innerText !== String(dev.lastAwb || '-')) awbEl.innerText = dev.lastAwb || '-';
+                        
+                        const cntEl = existingCard.querySelector('.dev-cnt');
+                        if (cntEl && cntEl.innerText !== String(count)) cntEl.innerText = count;
+
+                        const modeEl = existingCard.querySelector('.dev-mode');
+                        if (modeEl && modeEl.innerText !== String(dev.currentMode || 'N/A')) modeEl.innerText = dev.currentMode || 'N/A';
+
+                        const nameEl = existingCard.querySelector('.user-name');
+                        const hasDot = nameEl.querySelector('.status-dot-user');
+                        if (isOnline && !isBlocked) {
+                            if (!hasDot) nameEl.innerHTML = `${userName} <div class="status-dot-user"></div>`;
+                        } else {
+                            if (hasDot) nameEl.innerHTML = userName;
+                        }
+
+                        const msgContainer = existingCard.querySelector('.msg-container');
+                        const newHash = JSON.stringify({msg: msgData||{}, blk: isBlocked});
+                        if (msgContainer && msgContainer.dataset.hash !== newHash) {
+                            msgContainer.dataset.hash = newHash;
+                            msgContainer.innerHTML = buildMsgHtml(id, userName, msgData, isBlocked);
+                        }
+                    }
+                }
+            });
+
+            Array.from(grid.children).forEach(card => {
+                if (card.id === 'no-devices') {
+                    if (activeIds.length > 0) card.remove();
+                    return;
+                }
+                const cardId = card.id.replace('device-', '');
+                if (!activeIds.includes(cardId)) {
+                    card.remove();
+                }
+            });
+
+            if (activeIds.length === 0 && !document.getElementById('no-devices')) {
+                grid.innerHTML = `
+                    <div id="no-devices" style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted); background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--border);">
+                        <div style="font-weight:500;">Scanning network... No active devices found.</div>
+                    </div>`;
+            }
+            
+            document.getElementById('totalOnline').innerText = onlineCount;
+            document.getElementById('totalClosed').innerText = totalClosed;
+        }
+
+        // =========================================================================
+        // ACTIONS & SETTINGS
+        // =========================================================================
+        function sendDirectMessage() {
+            const text = document.getElementById('msgContent').value.trim();
+            if(!text) return;
+            
+            fetch(`https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus/messages/${targetMsgUser}.json`, {
+                method: 'PUT',
+                body: JSON.stringify({ text: text, timestamp: Date.now(), adminKey: 'Adel_Matrix_2026' })
+            }).then(response => {
+                if(!response.ok) throw new Error("Unauthorized");
+                closeModal();
+                showSystemToast("Message sent successfully.", "success");
+                fetchData();
+            }).catch(() => showSystemToast("Failed to send message.", "error"));
+        }
+        
+        function clearMessage(id) {
+            fetch(`https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus/messages/${id}.json`, { 
+                method: 'PUT',
+                body: JSON.stringify({ clear: true, adminKey: 'Adel_Matrix_2026' })
+            }).then(() => fetchData());
+        }
+
+        function toggleBlock(id) {
+            if(blockedDevices.includes(id)) blockedDevices = blockedDevices.filter(d => d !== id);
+            else blockedDevices.push(id);
+            saveSystemSettings(true);
+            fetchData();
+        }
+
+        function saveSystemSettings(silent = false) {
+            let parsedAccDb = {};
+            try {
+                const jsonStr = document.getElementById('jsonInput').value.trim();
+                if(jsonStr) parsedAccDb = JSON.parse(jsonStr);
+            } catch (e) {
+                showSystemToast("JSON Syntax Error.", "error"); return;
+            }
+
+            // التأكد من حفظ التواريخ المظبوطة فقط
+            currentHolidays = currentHolidays.map(cleanDateStr).filter(h => h);
+
             const config = {
-                isActive: powerSwitch.checked,
-                password: passInput.value,
+                isActive: document.getElementById('powerSwitch').checked,
+                password: document.getElementById('passInput').value,
                 holidays: currentHolidays,
                 blockedDevices: blockedDevices,
-                adminKey: 'Adel_Matrix_2026' 
+                accDb: parsedAccDb,
+                adminKey: 'Adel_Matrix_2026'
             };
-            fetch(dbUrl, { method: 'PUT', body: JSON.stringify(config) })
+            
+            fetch(dbStatusUrl, { method: 'PATCH', body: JSON.stringify(config) })
             .then(response => {
                 if(!response.ok) throw new Error("Unauthorized");
-                if(!silent) showSystemToast("تم نشر التعديلات بنجاح على جميع الأجهزة!", "success"); 
-            })
-            .catch(() => { if(!silent) showSystemToast("تم رفض التعديل! تأكد من صلاحيات الفايربيس.", "error"); });
+                if(!silent) showSystemToast("Changes deployed to all tools.", "success");
+            }).catch(() => {
+                if(!silent) showSystemToast("Deployment failed.", "error");
+            });
         }
+
+        fetchSettings();
+        fetchData();
+        setInterval(fetchData, 400);
     </script>
 </body>
 </html>
