@@ -2,321 +2,239 @@
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SkyBag - Admin Command Center</title>
     <style>
-        /* ==========================================
-           1. PREMIUM THEME VARIABLES & RESET
-           ========================================== */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
         :root { 
-            --bg-base: #0a0a0a; 
-            --bg-sidebar: #111111; 
-            --bg-card: #171717; 
-            --border: #262626; 
-            --border-hover: #404040;
-            --accent: #3b82f6; 
-            --accent-hover: #2563eb; 
-            --success: #10b981; 
-            --danger: #ef4444; 
-            --warning: #f59e0b; 
-            --text-main: #f5f5f5; 
-            --text-muted: #a3a3a3; 
+            --bg-base: #0f172a; --bg-sidebar: #0b1120; --bg-card: #1e293b; 
+            --border: #334155; --border-hover: #475569; --accent: #3b82f6; 
+            --accent-hover: #2563eb; --success: #10b981; --danger: #ef4444; 
+            --warning: #f59e0b; --text-main: #f8fafc; --text-muted: #94a3b8; 
         }
         
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        body { 
-            display: grid; 
-            grid-template-columns: 260px 1fr; 
-            grid-template-rows: 100vh;
-            background-color: var(--bg-base); 
-            color: var(--text-main); 
-            overflow: hidden; 
-            transition: grid-template-columns 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        body { display: grid; grid-template-columns: 260px 1fr; grid-template-rows: 100vh; background-color: var(--bg-base); color: var(--text-main); overflow: hidden; transition: grid-template-columns 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @media (min-width: 769px) {
+            body.sidebar-collapsed { grid-template-columns: 76px 1fr; }
+            body.sidebar-collapsed .brand-text, body.sidebar-collapsed .nav-text { display: none; }
+            body.sidebar-collapsed .sidebar-header { justify-content: center; padding: 0; }
+            body.sidebar-collapsed .toggle-btn { margin: 0; border-color: transparent; }
+            body.sidebar-collapsed .nav-item { justify-content: center; padding: 14px 0; }
         }
-        body.sidebar-collapsed { grid-template-columns: 76px 1fr; }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #404040; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
         .mono { font-family: 'JetBrains Mono', monospace; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ==========================================
-           2. ADMIN LOGIN OVERLAY
-           ========================================== */
-        #admin-login-screen {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: var(--bg-base); z-index: 999999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: opacity 0.5s ease;
-        }
-        .login-box {
-            background: var(--bg-card); border: 1px solid var(--border);
-            padding: 40px; border-radius: 16px; width: 380px; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-        .login-logo { font-size: 48px; margin-bottom: 10px; }
-        .login-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; color: #fff; }
-        .login-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 30px; }
-        .login-input { 
-            width: 100%; padding: 14px; background: var(--bg-base); 
-            border: 1px solid var(--border); border-radius: 8px; 
-            color: #fff; font-size: 20px; letter-spacing: 4px; text-align: center; 
-            margin-bottom: 20px; transition: 0.2s;
-        }
+        /* Admin Login */
+        #admin-login-screen { position: fixed; inset: 0; background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-base) 100%); z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; padding: 20px; }
+        .login-box { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 48px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .login-logo { font-size: 50px; margin-bottom: 12px; filter: drop-shadow(0 0 10px rgba(59,130,246,0.4)); }
+        .login-title { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; letter-spacing: -0.5px;}
+        .login-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; line-height: 1.5; }
+        .login-input { width: 100%; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 22px; letter-spacing: 6px; text-align: center; margin-bottom: 24px; transition: 0.3s; }
         .login-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
-        .login-btn {
-            width: 100%; padding: 14px; background: #fff; color: #000;
-            border: none; border-radius: 8px; font-weight: 700; font-size: 15px;
-            cursor: pointer; transition: 0.2s;
-        }
-        .login-btn:hover { background: #e5e5e5; transform: translateY(-2px); }
+        .login-btn { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.3s; }
+        .login-btn:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(59,130,246,0.5); }
 
-        /* ==========================================
-           3. SIDEBAR
-           ========================================== */
-        .sidebar { 
-            background: var(--bg-sidebar); border-right: 1px solid var(--border); 
-            display: flex; flex-direction: column; z-index: 100; overflow: hidden;
-        }
-        
-        .sidebar-header { 
-            height: 76px; padding: 0 20px; border-bottom: 1px solid var(--border); 
-            display: flex; align-items: center; justify-content: space-between; white-space: nowrap;
-        }
-        .brand { font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
-        .brand-icon { color: var(--accent); font-size: 20px; }
-        
-        body.sidebar-collapsed .brand-text { display: none; }
-        body.sidebar-collapsed .sidebar-header { justify-content: center; padding: 0; }
-        
-        .toggle-btn { 
-            background: transparent; border: 1px solid var(--border); border-radius: 8px; 
-            color: var(--text-muted); cursor: pointer; width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center; transition: 0.2s;
-        }
-        .toggle-btn:hover { color: #fff; background: var(--border); }
-        body.sidebar-collapsed .toggle-btn { margin: 0; border-color: transparent; }
-        
-        .nav-menu { flex: 1; padding: 24px 12px; display: flex; flex-direction: column; gap: 6px; }
-        .nav-item { 
-            padding: 12px 14px; display: flex; align-items: center; gap: 14px; 
-            color: var(--text-muted); text-decoration: none; cursor: pointer; border-radius: 8px; 
-            font-weight: 500; font-size: 14px; white-space: nowrap; transition: 0.2s; border: 1px solid transparent; 
-        }
+        /* Sidebar */
+        .sidebar { background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 1000; overflow: hidden; transition: left 0.3s ease, width 0.3s ease; }
+        .sidebar-header { height: 80px; padding: 0 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; white-space: nowrap; flex-shrink: 0; }
+        .brand { font-size: 19px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px; }
+        .brand-icon { color: var(--accent); font-size: 22px; filter: drop-shadow(0 0 8px rgba(59,130,246,0.4)); }
+        .toggle-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
+        .toggle-btn:hover { color: #fff; background: var(--bg-card); border-color: var(--border-hover); }
+        .nav-menu { flex: 1; padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+        .nav-item { padding: 14px 16px; display: flex; align-items: center; gap: 16px; color: var(--text-muted); text-decoration: none; cursor: pointer; border-radius: 10px; font-weight: 600; font-size: 14px; white-space: nowrap; transition: 0.3s; border: 1px solid transparent; }
         .nav-item:hover { color: #fff; background: rgba(255,255,255,0.03); }
-        .nav-item.active { 
-            background: rgba(59, 130, 246, 0.1); color: var(--accent); 
-            border-color: rgba(59, 130, 246, 0.2); font-weight: 600;
-        }
+        .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--accent); border-color: rgba(59, 130, 246, 0.2); box-shadow: inset 3px 0 0 var(--accent); }
         .nav-icon { font-size: 18px; min-width: 24px; text-align: center; }
-        
-        body.sidebar-collapsed .nav-text { display: none; }
-        body.sidebar-collapsed .nav-item { justify-content: center; padding: 14px 0; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 999; opacity: 0; transition: opacity 0.3s; }
 
-        /* ==========================================
-           4. MAIN LAYOUT & HEADER
-           ========================================== */
-        .main-wrapper { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        /* Main Layout */
+        .main-wrapper { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg-base); position: relative; }
+        .top-bar { height: 80px; padding: 0 48px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10; gap: 16px; }
+        .mobile-menu-btn { display: none; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: #fff; width: 36px; height: 36px; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .page-title { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
         
-        .top-bar { 
-            height: 76px; padding: 0 40px; background: var(--bg-body); border-bottom: 1px solid var(--border); 
-            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10;
-        }
-        
-        .page-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.5px;}
-        
-        .sync-status { 
-            font-size: 12px; font-weight: 600; background: rgba(16, 185, 129, 0.1); color: var(--success); 
-            padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px; 
-            border: 1px solid rgba(16, 185, 129, 0.2); 
-        }
-        .sync-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px rgba(16,185,129,0.5);}
-        
+        .sync-status { font-size: 13px; font-weight: 600; background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 8px 16px; border-radius: 20px; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(16, 185, 129, 0.2); flex-shrink: 0; white-space: nowrap;}
+        .sync-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px rgba(16,185,129,0.6);}
         .sync-status.offline { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
         .sync-status.offline .sync-dot { background: var(--danger); box-shadow: none; }
 
-        .content-scroll { flex: 1; overflow-y: auto; padding: 40px; }
-        .content-container { max-width: 1300px; margin: 0 auto; width: 100%; }
-        
+        .content-scroll { flex: 1; overflow-y: auto; padding: 48px; }
+        .content-container { max-width: 1400px; margin: 0 auto; width: 100%; }
         .tab-content { display: none; opacity: 0; }
         .tab-content.active { display: block; animation: fadeIn 0.4s ease-out forwards; }
 
-        /* ==========================================
-           5. CARDS & GRIDS
-           ========================================== */
-        .grid-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px; }
-        
-        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: 0.3s; }
-        .stat-card:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
-        
-        .stat-header { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
-        .stat-val { font-size: 40px; font-weight: 800; color: #fff; margin-top: 12px; line-height: 1; letter-spacing: -1px;}
+        /* Cards & Grids */
+        .grid-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 48px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .stat-header { font-size: 14px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;}
+        .stat-val { font-size: 48px; font-weight: 800; color: #fff; margin-top: 16px; line-height: 1; letter-spacing: -2px;}
         .stat-val.highlight { color: var(--accent); }
-
-        .section-title { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 20px; }
-
-        .devices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px; }
         
-        .device-card { 
-            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; 
-            padding: 20px; transition: 0.3s ease; display: flex; flex-direction: column;
-        }
-        .device-card:hover { border-color: var(--border-hover); transform: translateY(-3px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.8); }
-        .device-card.blocked { opacity: 0.5; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
-        
-        .user-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
-        .avatar { width: 46px; height: 46px; background: var(--bg-body); border: 1px solid var(--border); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 16px; color: var(--accent); }
+        /* Debug Pill */
+        .debug-pill { font-size: 13px; background: rgba(59,130,246,0.1); color: var(--accent); padding: 6px 14px; border-radius: 20px; margin-left: 12px; border: 1px solid rgba(59,130,246,0.2); display: inline-flex; align-items: center; vertical-align: middle; font-weight: 600; letter-spacing: 0.5px; }
+
+        .section-title { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 24px; letter-spacing: -0.5px; display: flex; align-items: center; }
+        .devices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .device-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .device-card.blocked { opacity: 0.6; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+        .user-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .avatar { width: 50px; height: 50px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 12px; display: flex; justify-content: center; align-items: center; font-weight: 800; font-size: 18px; color: var(--accent); flex-shrink: 0;}
         .user-info { flex: 1; overflow: hidden; }
-        .user-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #fff; margin-bottom: 4px;}
-        .device-os { font-size: 12px; color: var(--text-muted); }
-        .status-dot-user { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
-
-        .data-panel { background: var(--bg-body); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
-        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px;}
+        .user-name { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; color: #fff; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+        .device-os { font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+        .status-dot-user { width: 10px; height: 10px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px rgba(16,185,129,0.5); flex-shrink: 0;}
+        .data-panel { background: var(--bg-base); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px;}
         .info-row:last-child { margin-bottom: 0; }
-        .info-label { color: var(--text-muted); }
-        .info-val { font-weight: 600; color: #fff; }
-        
-        .reply-alert { background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--warning); padding: 12px; border-radius: 0 6px 6px 0; margin-top: 16px; font-size: 13px; }
-        .reply-alert span { color: var(--warning); display: block; margin-bottom: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;}
-
-        /* ==========================================
-           6. BUTTONS & CONTROLS
-           ========================================== */
-        .card-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-body); color: var(--text-main); font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.2s; text-align: center;}
-        .btn:hover { background: var(--border); }
+        .info-label { color: var(--text-muted); font-weight: 500; }
+        .info-val { font-weight: 600; color: #fff; text-align: right;}
+        .card-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;}
+        .btn { flex: 1; min-width: 90px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-base); color: var(--text-main); font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; text-align: center;}
+        .btn:hover { background: var(--border); color: #fff; }
         .btn-danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--danger); }
         .btn-success { color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
-        .btn-success:hover { background: rgba(16, 185, 129, 0.1); border-color: var(--success); }
         .btn-msg { color: var(--accent); border-color: rgba(59, 130, 246, 0.3); }
-        .btn-msg:hover { background: rgba(59, 130, 246, 0.1); border-color: var(--accent); }
-        .btn-clear { width: 100%; margin-top: 10px; }
+        .btn-primary { background: var(--text-main); color: var(--bg-base); border: none; padding: 14px 28px; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.3s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-primary:active { transform: translateY(1px); }
 
-        .btn-primary { background: #fff; color: #000; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; width: 100%; }
-        .btn-primary:hover { background: #e5e5e5; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(255,255,255,0.1); }
-
-        /* ==========================================
-           7. FORMS & INPUTS
-           ========================================== */
-        input[type="text"], input[type="password"], textarea { 
-            width: 100%; padding: 14px 16px; background: var(--bg-body); 
-            border: 1px solid var(--border); border-radius: 8px; color: #fff; 
-            font-size: 14px; transition: 0.2s; margin-bottom: 20px;
-        }
-        input[type="text"]:focus, input[type="password"]:focus, textarea:focus { outline: none; border-color: var(--border-hover); background: var(--bg-card);}
-        .json-editor { height: 400px; color: var(--success); }
-
-        .switch-container { display: flex; justify-content: space-between; align-items: center; background: var(--bg-body); padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 24px;}
-        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        /* Inputs & Switches */
+        input[type="text"], input[type="password"], textarea, input[type="date"] { width: 100%; padding: 16px 20px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 15px; transition: 0.3s; margin-bottom: 24px; color-scheme: dark; }
+        input:focus, textarea:focus { outline: none; border-color: var(--accent); background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 0 3px rgba(59,130,246,0.15);}
+        .json-editor { height: 400px; color: var(--success); line-height: 1.5; font-size: 14px;}
+        .switch-container { display: flex; justify-content: space-between; align-items: center; background: var(--bg-base); padding: 20px 24px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 32px;}
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-hover); border-radius: 30px; transition: .3s; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #fff; border-radius: 50%; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: #fff; border-radius: 50%; transition: .3s; }
         input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        input:checked + .slider:before { transform: translateX(22px); }
 
-        /* ==========================================
-           8. MODALS & TOASTS
-           ========================================== */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; justify-content: center; align-items: center; opacity: 0; transition: 0.3s; }
-        .modal-overlay.active { display: flex; opacity: 1; }
-        .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 420px; padding: 24px; transform: scale(0.95); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px -12px rgba(0,0,0,1); }
-        .modal-overlay.active .modal-box { transform: scale(1); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-title { font-size: 16px; font-weight: 600; color: #fff;}
-        .modal-close { cursor: pointer; color: var(--text-muted); font-size: 24px; transition: 0.2s; line-height: 1; }
-        .modal-close:hover { color: var(--danger); }
-
-        .system-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--accent); color: #fff; padding: 16px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px; z-index: 99999; opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        .system-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast-success { border-left-color: var(--success); }
-        .toast-error { border-left-color: var(--danger); }
-
-        /* ==========================================
-           9. HOLIDAYS MANAGER (CALENDAR + VERTICAL LIST)
-           ========================================== */
-        .holidays-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            max-width: 900px;
-            margin: 0 auto;
+        /* Range Date Filter */
+        .log-toolbar {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border);
+            padding: 20px 24px; border-radius: 14px; margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 20px;
         }
-        @media (max-width: 850px) {
+        
+        .date-range-container { display: flex; gap: 16px; flex-wrap: wrap; flex: 1; align-items: flex-end; }
+        .date-filter-group { display: flex; flex-direction: column; width: 100%; max-width: 200px; }
+        .date-filter-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+        
+        .date-filter-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
+        .date-filter-wrapper input[type="date"] {
+            background: var(--bg-base); border: 1px solid var(--border);
+            padding: 0 16px 0 44px; border-radius: 8px; color: #fff;
+            font-size: 14px; font-family: 'JetBrains Mono', monospace;
+            cursor: pointer; transition: 0.2s; margin-bottom: 0;
+            height: 46px; width: 100%; color-scheme: dark;
+        }
+        .date-filter-wrapper input[type="date"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .filter-icon { position: absolute; left: 14px; color: var(--text-muted); pointer-events: none; display: flex; align-items: center; justify-content: center; }
+        
+        .log-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .action-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; border: 1px solid transparent; white-space: nowrap; }
+        .action-btn svg { width: 18px; height: 18px; stroke-width: 2.5; }
+        
+        .show-all-btn { background: rgba(255,255,255,0.05); color: #fff; border-color: var(--border); }
+        .show-all-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+        .refresh-btn { background: var(--bg-base); color: var(--text-main); border-color: var(--border); }
+        .refresh-btn:hover { background: var(--border); color: #fff; }
+        .export-btn { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
+        .export-btn:hover { background: var(--success); color: #fff; }
+        .clear-btn { background: rgba(239, 68, 68, 0.05); color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
+        .clear-btn:hover { background: var(--danger); color: #fff; }
+
+        /* Master Logs Table */
+        .log-table-wrapper { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .log-table { width: 100%; min-width: 700px; border-collapse: collapse; text-align: left; }
+        .log-table th { padding: 18px 24px; background: rgba(15, 23, 42, 0.5); color: var(--text-muted); font-size: 13px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; z-index: 2;}
+        .log-table td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 14px; color: #fff; white-space: nowrap;}
+        .log-table tr:last-child td { border-bottom: none; }
+        .log-table tr:hover td { background: rgba(255,255,255,0.03); }
+        .empty-logs { text-align:center; padding: 60px; color: var(--text-muted); font-size: 15px; }
+
+        /* Holidays Manager */
+        .holidays-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 1000px; margin: 0 auto; }
+        .cal-box, .list-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .cal-btn { background: var(--bg-base); border: 1px solid var(--border); color: #fff; border-radius: 8px; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px;}
+        .cal-title { font-weight: 800; font-size: 18px; color: #fff; }
+        .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 16px; font-weight: 700;}
+        .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 15px; border-radius: 10px; cursor: pointer; color: var(--text-main); font-weight: 500; font-family: 'JetBrains Mono', monospace; border: 1px solid transparent; }
+        .cal-day:hover:not(.empty) { border-color: var(--border-hover); background: rgba(255,255,255,0.05); }
+        .cal-day.selected { background: var(--accent); color: #fff; border: 1px solid var(--accent); font-weight: 700; box-shadow: 0 4px 10px rgba(59,130,246,0.3); }
+        .cal-day.empty { cursor: default; }
+        
+        .list-header { font-size: 15px; font-weight: 700; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .hol-list-vertical { display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; max-height: 340px; padding-right: 8px; }
+        .hol-item-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-base); border: 1px solid var(--border); padding: 16px 20px; border-radius: 10px; }
+        .hol-item-date { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; color: #fff;}
+        .hol-item-del { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
+
+        /* Full Chat Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 10000; display: none; justify-content: center; align-items: center; opacity: 0; transition: 0.3s; padding: 20px; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 500px; padding: 24px; transform: scale(0.95); transition: 0.3s; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); display: flex; flex-direction: column; max-height: 85vh;}
+        .modal-overlay.active .modal-box { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);}
+        .modal-close { cursor: pointer; color: var(--text-muted); font-size: 28px; line-height: 1; transition: 0.2s;}
+        .modal-close:hover { color: var(--danger); }
+        
+        .chat-history { flex: 1; overflow-y: auto; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; min-height: 250px; display: flex; flex-direction: column; gap: 12px;}
+        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.4; word-break: break-word;}
+        .chat-admin { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 2px;}
+        .chat-user { align-self: flex-start; background: var(--border); color: #fff; border-bottom-left-radius: 2px;}
+        .chat-ts { font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: right; display: block;}
+        
+        .chat-input-area { display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; margin-bottom: 0; padding: 12px 16px;}
+        .chat-input-area button { width: auto; padding: 0 24px; margin-bottom: 0;}
+
+        .system-toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg-card); border: 1px solid var(--border); border-left: 5px solid var(--accent); color: #fff; padding: 16px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 12px; z-index: 99999; opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .system-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        @media (max-width: 1024px) {
+            .content-scroll { padding: 32px 24px; }
+            .top-bar { padding: 0 24px; }
             .holidays-wrapper { grid-template-columns: 1fr; }
         }
-
-        .cal-box, .list-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
+        @media (max-width: 768px) {
+            body { display: block; overflow-y: auto;}
+            .sidebar { position: fixed; left: -280px; top: 0; bottom: 0; width: 280px; box-shadow: 4px 0 25px rgba(0,0,0,0.5); border-right: none; }
+            body.sidebar-open { overflow: hidden; }
+            body.sidebar-open .sidebar { left: 0; }
+            body.sidebar-open .sidebar-overlay { display: block; opacity: 1; }
+            .top-bar { height: 70px; padding: 0 20px; }
+            .mobile-menu-btn { display: flex; }
+            .content-scroll { padding: 24px 16px; overflow-y: visible;}
+            .grid-overview { grid-template-columns: 1fr; gap: 16px; margin-bottom: 32px; }
+            .devices-grid { grid-template-columns: 1fr; gap: 16px; }
+            .log-toolbar { flex-direction: column; align-items: stretch; }
+            .date-range-container { flex-direction: column; align-items: stretch; }
+            .date-filter-group { max-width: 100%; }
+            .log-actions { justify-content: space-between; gap: 8px; }
+            .action-btn { flex: 1; padding: 0 10px; font-size: 13px; }
         }
-
-        /* Calendar Styles */
-        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .cal-btn { background: transparent; border: 1px solid var(--border); color: #fff; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 16px;}
-        .cal-btn:hover { background: var(--border); }
-        .cal-title { font-weight: 700; font-size: 16px; color: #fff;}
-        
-        .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600;}
-        .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-        
-        .cal-day { 
-            aspect-ratio: 1; display: flex; align-items: center; justify-content: center; 
-            font-size: 14px; border-radius: 8px; cursor: pointer; transition: 0.2s; 
-            color: var(--text-main); font-weight: 500; font-family: 'JetBrains Mono', monospace;
-            border: 1px solid transparent;
-        }
-        .cal-day:hover:not(.empty) { border-color: var(--border); background: rgba(255,255,255,0.05); }
-        .cal-day.selected { 
-            background: rgba(239, 68, 68, 0.1); color: var(--danger); 
-            border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 700; 
-        }
-        .cal-day.selected:hover { background: rgba(239, 68, 68, 0.2); }
-        .cal-day.empty { cursor: default; }
-
-        /* Vertical List Styles */
-        .list-header { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;}
-        .hol-list-vertical { 
-            display: flex; flex-direction: column; gap: 10px; 
-            flex: 1; overflow-y: auto; max-height: 310px; padding-right: 4px;
-        }
-        
-        .hol-item-row { 
-            display: flex; justify-content: space-between; align-items: center; 
-            background: var(--bg-body); border: 1px solid var(--border); 
-            padding: 12px 16px; border-radius: 8px; transition: 0.2s;
-        }
-        .hol-item-row:hover { border-color: var(--border-hover); }
-        .hol-item-date { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #fff;}
-        
-        .hol-item-del { 
-            background: rgba(239, 68, 68, 0.1); color: var(--danger); 
-            border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; 
-            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; transition: 0.2s; font-size: 14px;
-        }
-        .hol-item-del:hover { background: var(--danger); color: #fff; }
-        
-        .empty-holidays { text-align: center; color: var(--text-muted); padding: 40px 20px; font-size: 13px; line-height: 1.6;}
     </style>
 </head>
 <body>
 
-    <!-- ==========================================
-         ADMIN LOGIN SCREEN (Double Security Layer 1)
-         ========================================== -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- ADMIN LOGIN -->
     <div id="admin-login-screen">
         <div class="login-box">
             <div class="login-logo">⚡</div>
@@ -327,44 +245,33 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         SIDEBAR
-         ========================================== -->
+    <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="brand">
-                <span class="brand-icon">⚡</span> 
-                <span class="brand-text">Admin Panel</span>
-            </div>
-            <button class="toggle-btn" onclick="toggleSidebar()">
+            <div class="brand"><span class="brand-icon">⚡</span> <span class="brand-text">Admin Panel</span></div>
+            <button class="toggle-btn" onclick="toggleSidebarDesktop()" id="desktopToggleBtn">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
         </div>
         <div class="nav-menu">
-            <div class="nav-item active" onclick="switchTab('monitoring', this)">
-                <span class="nav-icon">📊</span> <span class="nav-text">Live Monitoring</span>
-            </div>
-            <div class="nav-item" onclick="switchTab('security', this)">
-                <span class="nav-icon">🔐</span> <span class="nav-text">Security Settings</span>
-            </div>
-            <div class="nav-item" onclick="switchTab('database', this)">
-                <span class="nav-icon">🗄️</span> <span class="nav-text">Accounts Database</span>
-            </div>
-            <div class="nav-item" onclick="switchTab('holidays', this)">
-                <span class="nav-icon">📅</span> <span class="nav-text">Skipped Dates</span>
-            </div>
+            <div class="nav-item active" onclick="switchTab('monitoring', this)"><span class="nav-icon">📊</span> <span class="nav-text">Live Monitoring</span></div>
+            <div class="nav-item" onclick="switchTab('logs', this)"><span class="nav-icon">📋</span> <span class="nav-text">Master Logs</span></div>
+            <div class="nav-item" onclick="switchTab('security', this)"><span class="nav-icon">🔐</span> <span class="nav-text">Security Settings</span></div>
+            <div class="nav-item" onclick="switchTab('database', this)"><span class="nav-icon">🗄️</span> <span class="nav-text">Accounts Database</span></div>
+            <div class="nav-item" onclick="switchTab('holidays', this)"><span class="nav-icon">📅</span> <span class="nav-text">Skipped Dates</span></div>
         </div>
     </div>
 
-    <!-- ==========================================
-         MAIN CONTENT AREA
-         ========================================== -->
+    <!-- MAIN CONTENT -->
     <div class="main-wrapper">
         <div class="top-bar">
-            <div class="page-title" id="pageTitle">Live Monitoring</div>
-            <div class="sync-status" id="syncStatus">
-                <span class="sync-dot"></span> Sync Active
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <div class="page-title" id="pageTitle">Live Monitoring</div>
             </div>
+            <div class="sync-status" id="syncStatus"><span class="sync-dot"></span> Sync Active</div>
         </div>
 
         <div class="content-scroll">
@@ -382,67 +289,121 @@
                             <div class="stat-val mono highlight" id="totalClosed">0</div>
                         </div>
                     </div>
-
                     <div class="section-title">Active Devices</div>
-                    <div class="devices-grid" id="devices-grid">
-                        <!-- Loaded dynamically via smart DOM updater -->
+                    <div class="devices-grid" id="devices-grid"></div>
+                </div>
+
+                <!-- Tab: Master Logs -->
+                <div id="tab-logs" class="tab-content">
+                    <div class="section-title">
+                        Central Audit Trail
+                        <span class="debug-pill" id="total-server-logs">Database Records: 0</span>
+                    </div>
+                    
+                    <div class="log-toolbar">
+                        <div class="date-range-container">
+                            <div class="date-filter-group">
+                                <span class="date-filter-label">From Date:</span>
+                                <div class="date-filter-wrapper">
+                                    <div class="filter-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    </div>
+                                    <input type="date" id="log-date-from" onchange="renderLogs()">
+                                </div>
+                            </div>
+                            
+                            <div class="date-filter-group">
+                                <span class="date-filter-label">To Date:</span>
+                                <div class="date-filter-wrapper">
+                                    <div class="filter-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    </div>
+                                    <input type="date" id="log-date-to" onchange="renderLogs()">
+                                </div>
+                            </div>
+                            
+                            <!-- الزرار ده بيشيل الفلتر عشان تتأكد إن الداتا موجودة -->
+                            <button class="action-btn show-all-btn" onclick="clearDateFilter()">Show All Time</button>
+                        </div>
+                        
+                        <div class="log-actions">
+                            <button class="action-btn refresh-btn" onclick="loadLogs()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                <span>Refresh</span>
+                            </button>
+                            <button class="action-btn export-btn" onclick="exportAdminLogs()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                <span>Export</span>
+                            </button>
+                            <button class="action-btn clear-btn" onclick="clearAdminLogs()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                <span>Clear Server</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="log-table-wrapper">
+                        <table class="log-table">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>User Name</th>
+                                    <th>AWB Number</th>
+                                    <th>Mode</th>
+                                    <th>Company</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-tbody">
+                                <tr><td colspan="6" class="empty-logs">Loading logs from server...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
                 <!-- Tab: Security -->
                 <div id="tab-security" class="tab-content">
-                    <div class="stat-card" style="max-width: 600px; margin: 0 auto;">
-                        <div class="section-title" style="margin-bottom: 24px;">Master Control</div>
-                        
+                    <div class="stat-card" style="max-width: 650px; margin: 0 auto;">
+                        <div class="section-title" style="margin-bottom: 32px;">Master Control</div>
                         <div class="switch-container">
                             <div>
-                                <div style="font-weight: 600; font-size: 15px; color: #fff;">System Power Status</div>
-                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Toggle to globally disable tools for all users.</div>
+                                <div style="font-weight: 700; font-size: 16px; color: #fff;">System Power Status</div>
+                                <div style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">Toggle to globally disable tools for all users.</div>
                             </div>
                             <label class="switch">
-                                <input type="checkbox" id="powerSwitch" checked>
+                                <input type="checkbox" id="powerSwitch" checked onchange="instantPowerToggle()">
                                 <span class="slider"></span>
                             </label>
                         </div>
-
                         <div>
-                            <div style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Master Passcode (Tools Key)</div>
-                            <input type="text" id="passInput" value="02026" class="mono" style="font-size: 20px; letter-spacing: 4px; text-align: center;">
+                            <div style="font-weight: 700; font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">Master Passcode (Tools Key)</div>
+                            <input type="text" id="passInput" value="0282003" class="mono" style="font-size: 22px; letter-spacing: 6px; text-align: center;">
                         </div>
-                        
-                        <button class="btn-primary" onclick="saveSystemSettings()">Deploy Security Changes</button>
+                        <button class="btn-primary" style="margin-top: 10px;" onclick="saveSystemSettings()">Deploy Security Changes</button>
                     </div>
                 </div>
 
-                <!-- Tab: Database (Double Security Layer 2) -->
+                <!-- Tab: Database -->
                 <div id="tab-database" class="tab-content">
-                    <div class="stat-card" style="max-width: 900px; margin: 0 auto; min-height: 400px; display: flex; flex-direction: column; justify-content: center;">
-                        
-                        <!-- Lock Screen inside Database Tab -->
+                    <div class="stat-card" style="max-width: 900px; margin: 0 auto; min-height: 450px; display: flex; flex-direction: column; justify-content: center;">
                         <div id="db-lock-screen" style="text-align: center;">
-                            <div style="font-size: 40px; margin-bottom: 15px;">🔒</div>
-                            <div class="section-title" style="border:none; margin-bottom:10px;">Restricted Area</div>
-                            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">Enter database master key to view or edit accounts.</p>
-                            <input type="password" id="db-pass-input" placeholder="••••••••" style="max-width: 300px; text-align: center; margin: 0 auto 20px; display: block; font-size: 20px; letter-spacing: 4px;">
-                            <button class="btn-primary" style="max-width: 300px;" onclick="unlockDatabase()">Decrypt Database</button>
+                            <div style="font-size: 48px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));">🔒</div>
+                            <div class="section-title" style="border:none; margin-bottom:12px; font-size: 24px;">Restricted Area</div>
+                            <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 32px;">Enter database master key to view or edit accounts.</p>
+                            <input type="password" id="db-pass-input" placeholder="••••••••" style="max-width: 320px; text-align: center; margin: 0 auto 24px; display: block; font-size: 22px; letter-spacing: 6px;">
+                            <button class="btn-primary" style="max-width: 320px; background: var(--accent); margin: 0 auto;" onclick="unlockDatabase()">Decrypt Database</button>
                         </div>
-
-                        <!-- Database Editor (Hidden until unlocked) -->
                         <div id="db-content" style="display: none; height: 100%;">
                             <div class="section-title">Accounts Database (JSON)</div>
-                            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">
-                                Map Account Numbers to Company Names and Products. Ensure perfect JSON format.
-                            </p>
-                            <textarea id="jsonInput" class="json-editor mono" placeholder='{ "123456": { "n": "Vodafone", "p": "Credit Card", "sd": true } }'></textarea>
-                            <button class="btn-primary" onclick="saveSystemSettings()">Deploy Database Mapping</button>
+                            <textarea id="jsonInput" class="json-editor mono" spellcheck="false"></textarea>
+                            <button class="btn-primary" style="background: var(--success);" onclick="saveSystemSettings()">Deploy Database Mapping</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tab: Holidays (Brand New Interactive Calendar & Vertical List) -->
+                <!-- Tab: Holidays -->
                 <div id="tab-holidays" class="tab-content">
-                    <div class="section-title" style="max-width: 900px; margin: 0 auto 20px;">Skipped Dates Manager</div>
-                    
+                    <div class="section-title" style="max-width: 1000px; margin: 0 auto 24px;">Skipped Dates Manager</div>
                     <div class="holidays-wrapper">
                         <!-- Calendar Box -->
                         <div class="cal-box">
@@ -454,22 +415,17 @@
                             <div class="cal-weekdays">
                                 <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
                             </div>
-                            <div class="cal-days" id="cal-days">
-                                <!-- Calendar days injected via JS -->
-                            </div>
+                            <div class="cal-days" id="cal-days"></div>
                         </div>
 
                         <!-- Selected Dates List Box -->
                         <div class="list-box">
                             <div class="list-header">Selected Exclusions</div>
-                            <div class="hol-list-vertical" id="adminHolsList">
-                                <!-- List items injected via JS -->
-                            </div>
+                            <div class="hol-list-vertical" id="adminHolsList"></div>
                         </div>
                     </div>
-                    
-                    <div style="max-width: 900px; margin: 24px auto 0;">
-                        <button class="btn-primary" onclick="saveSystemSettings()">Save Holiday Configuration</button>
+                    <div style="max-width: 1000px; margin: 32px auto 0;">
+                        <button class="btn-primary" style="background: var(--accent);" onclick="saveSystemSettings()">Save Holiday Configuration</button>
                     </div>
                 </div>
 
@@ -477,433 +433,406 @@
         </div>
     </div>
 
-    <!-- Message Modal -->
+    <!-- FULL CHAT MODAL -->
     <div class="modal-overlay" id="msgModal">
         <div class="modal-box">
             <div class="modal-header">
-                <span class="modal-title" id="msgModalTitle">Send Message</span>
+                <span class="modal-title" id="msgModalTitle" style="color:#fff; font-weight:700; font-size: 18px;">Live Chat</span>
                 <span class="modal-close" onclick="closeModal()">×</span>
             </div>
-            <textarea id="msgContent" placeholder="Type your message here..."></textarea>
-            <button class="btn-primary" onclick="sendDirectMessage()">Send Message</button>
+            
+            <div class="chat-history" id="chatHistoryBox">
+                <!-- Chat messages injected here -->
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="msgContent" placeholder="Type message..." autocomplete="off">
+                <button class="btn-primary" style="background: var(--accent);" onclick="sendDirectMessage()">Send</button>
+            </div>
         </div>
     </div>
 
-    <!-- Core Logic -->
     <script>
-        
         const ADMIN_PANEL_PASSWORD = "0282003";
         const DATABASE_PASSWORD = "0282003";
 
         const dbStatusUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus.json";
         const dbDevicesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/activeDevices.json";
         const dbMessagesUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus/messages.json";
+        const dbLogsUrl = "https://matrix-tool-admin-default-rtdb.firebaseio.com/masterLogs.json";
         
         let blockedDevices = [];
         let currentHolidays = [];
-        let currentAccDb = {};
         let allMessages = {};
         let targetMsgUser = "";
+        let globalLogs = {};
+        let chatAutoScroll = true;
 
-        // Calendar State
+        // Default Dates Setup
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        
+        document.getElementById('log-date-from').value = todayStr;
+        document.getElementById('log-date-to').value = todayStr;
+
         let calDate = new Date();
 
-        // =========================================================================
-        // LOGIN & UNLOCK LOGIC
-        // =========================================================================
         function verifyAdminLogin() {
-            const val = document.getElementById('admin-pass-input').value;
-            if(val === ADMIN_PANEL_PASSWORD) {
-                const screen = document.getElementById('admin-login-screen');
-                screen.style.opacity = '0';
-                setTimeout(() => screen.style.display = 'none', 500);
-            } else {
-                showSystemToast("Access Denied: Incorrect Password", "error");
-            }
+            if(document.getElementById('admin-pass-input').value === ADMIN_PANEL_PASSWORD) {
+                document.getElementById('admin-login-screen').style.opacity = '0';
+                setTimeout(() => document.getElementById('admin-login-screen').style.display = 'none', 500);
+            } else showSystemToast("Incorrect Password", "error");
         }
-
-        document.getElementById('admin-pass-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') verifyAdminLogin();
-        });
+        document.getElementById('admin-pass-input').addEventListener('keypress', e => { if (e.key === 'Enter') verifyAdminLogin(); });
 
         function unlockDatabase() {
-            const val = document.getElementById('db-pass-input').value;
-            if(val === DATABASE_PASSWORD) {
+            if(document.getElementById('db-pass-input').value === DATABASE_PASSWORD) {
                 document.getElementById('db-lock-screen').style.display = 'none';
                 document.getElementById('db-content').style.display = 'block';
-            } else {
-                showSystemToast("Decryption Failed: Incorrect Master Key", "error");
-            }
+            } else showSystemToast("Incorrect Master Key", "error");
         }
-        
-        document.getElementById('db-pass-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') unlockDatabase();
-        });
+        document.getElementById('db-pass-input').addEventListener('keypress', e => { if (e.key === 'Enter') unlockDatabase(); });
 
-        // =========================================================================
-        // UI & NAVIGATION FUNCTIONS
-        // =========================================================================
-        function toggleSidebar() { 
-            document.body.classList.toggle('sidebar-collapsed');
-        }
+        function toggleSidebarDesktop() { if(window.innerWidth > 768) document.body.classList.toggle('sidebar-collapsed'); }
+        function toggleSidebar() { if(window.innerWidth <= 768) document.body.classList.toggle('sidebar-open'); }
         
         function switchTab(tabId, el) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
-            
+            document.querySelectorAll('.tab-content, .nav-item').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
             el.classList.add('active');
             
-            const titles = { 
-                'monitoring': 'Live Monitoring', 
-                'security': 'Security Settings', 
-                'database': 'Accounts Database', 
-                'holidays': 'Skipped Dates Manager' 
-            };
+            const titles = { 'monitoring': 'Live Monitoring', 'logs': 'Master Audit Logs', 'security': 'Security Settings', 'database': 'Accounts Database', 'holidays': 'Skipped Dates Manager' };
             document.getElementById('pageTitle').innerText = titles[tabId];
+            if(window.innerWidth <= 768) toggleSidebar();
+            if(tabId === 'logs') loadLogs();
         }
 
         function showSystemToast(message, type = 'success') {
             const existing = document.getElementById('sys-toast');
             if (existing) existing.remove();
-            
             const toast = document.createElement('div');
             toast.id = 'sys-toast';
             toast.className = `system-toast ${type === 'success' ? 'toast-success' : 'toast-error'}`;
-            
-            const prefix = type === 'success' ? 'SUCCESS:' : 'ERROR:';
-            const color = type === 'success' ? 'var(--success)' : 'var(--danger)';
-            toast.innerHTML = `<strong style="color: ${color}; font-family: monospace;">${prefix}</strong> <span>${message}</span>`;
-            
+            toast.innerHTML = `<span>${message}</span>`;
             document.body.appendChild(toast);
             requestAnimationFrame(() => toast.classList.add('show'));
             setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 2500);
         }
 
+        // =====================================
+        // Chat Logic
+        // =====================================
         function openMessageModal(deviceId, userName) {
             targetMsgUser = deviceId;
-            document.getElementById('msgModalTitle').innerText = `Message: ${userName}`;
+            document.getElementById('msgModalTitle').innerText = `Chat with: ${userName}`;
             document.getElementById('msgContent').value = "";
             document.getElementById('msgModal').classList.add('active');
+            chatAutoScroll = true;
+            renderChatHistory();
             setTimeout(() => document.getElementById('msgContent').focus(), 100);
         }
         
-        function closeModal() { document.getElementById('msgModal').classList.remove('active'); }
-        document.getElementById('msgModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-
-        // =========================================================================
-        // CALENDAR & LIST LOGIC (NEW)
-        // =========================================================================
-        function cleanDateStr(str) {
-            return str.replace(/\/+/g, '/').trim();
-        }
-
-        function renderCalendar() {
-            const month = calDate.getMonth();
-            const year = calDate.getFullYear();
+        function closeModal() { document.getElementById('msgModal').classList.remove('active'); targetMsgUser = ""; }
+        
+        function renderChatHistory() {
+            if(!targetMsgUser) return;
+            const chatBox = document.getElementById('chatHistoryBox');
+            const data = allMessages[targetMsgUser] || {};
+            const chat = data.chat || [];
             
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            document.getElementById('cal-title').innerText = `${monthNames[month]} ${year}`;
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            currentHolidays = currentHolidays.map(cleanDateStr).filter(h => h);
-
-            let html = '';
-            for (let i = 0; i < firstDay; i++) {
-                html += `<div class="cal-day empty"></div>`;
-            }
-            
-            for (let i = 1; i <= daysInMonth; i++) {
-                // Formatting date to match Tool's logic
-                const dateStr = `${i}/${month + 1}/${year}`;
-                const padStr = `${String(i).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
-                
-                const isSelected = currentHolidays.includes(dateStr) || currentHolidays.includes(padStr);
-                const activeClass = isSelected ? 'selected' : '';
-                
-                html += `<div class="cal-day ${activeClass}" onclick="toggleDate('${dateStr}')">${i}</div>`;
-            }
-            
-            document.getElementById('cal-days').innerHTML = html;
-            renderHolsList();
-        }
-
-        function changeMonth(dir) {
-            calDate.setMonth(calDate.getMonth() + dir);
-            renderCalendar();
-        }
-
-        function toggleDate(dateStr) {
-            dateStr = cleanDateStr(dateStr);
-            const parts = dateStr.split('/');
-            const padStr = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
-            
-            const idx1 = currentHolidays.indexOf(dateStr);
-            const idx2 = currentHolidays.indexOf(padStr);
-            
-            if (idx1 > -1) {
-                currentHolidays.splice(idx1, 1);
-            } else if (idx2 > -1) {
-                currentHolidays.splice(idx2, 1);
-            } else {
-                currentHolidays.push(dateStr);
-            }
-            
-            renderCalendar();
-        }
-
-        function renderHolsList() {
-            // Sort chronologically
-            const sorted = [...currentHolidays].sort((a, b) => {
-                const [d1, m1, y1] = a.split('/').map(Number);
-                const [d2, m2, y2] = b.split('/').map(Number);
-                return new Date(y1, m1-1, d1) - new Date(y2, m2-1, d2);
-            });
-
-            const div = document.getElementById('adminHolsList');
-            if(sorted.length === 0) {
-                div.innerHTML = '<div class="empty-holidays">No exclusions configured.<br>Click dates on the calendar to add.</div>';
+            if(chat.length === 0) {
+                chatBox.innerHTML = '<div style="text-align:center; color:var(--text-muted); margin-top:20px; font-size:13px;">No messages yet. Start the conversation!</div>';
                 return;
             }
-            
-            div.innerHTML = sorted.map((h) => {
-                const [d, m, y] = h.split('/');
-                const dateObj = new Date(y, m-1, d);
-                // e.g. "May 29, 2026"
-                const niceDate = dateObj.toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' });
-                
-                return `
-                    <div class="hol-item-row">
-                        <span class="hol-item-date">${niceDate}</span>
-                        <button class="hol-item-del" onclick="toggleDate('${h}')" title="Remove">✖</button>
-                    </div>`;
+
+            chatBox.innerHTML = chat.map(c => {
+                const isAdmin = c.from === 'admin';
+                const time = new Date(c.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                return `<div class="chat-bubble ${isAdmin ? 'chat-admin' : 'chat-user'}">${c.msg}<span class="chat-ts">${time}</span></div>`;
             }).join('');
+            
+            if(chatAutoScroll) chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // =========================================================================
-        // DATA SYNC & SMART DOM UPDATER
-        // =========================================================================
+        document.getElementById('chatHistoryBox').addEventListener('scroll', function() {
+            if (this.scrollHeight - this.scrollTop > this.clientHeight + 10) chatAutoScroll = false;
+            else chatAutoScroll = true;
+        });
+
+        document.getElementById('msgContent').addEventListener('keypress', e => { if (e.key === 'Enter') sendDirectMessage(); });
+
+        function sendDirectMessage() {
+            const text = document.getElementById('msgContent').value.trim();
+            if(!text || !targetMsgUser) return;
+            
+            const data = allMessages[targetMsgUser] || {};
+            const chatArr = data.chat || [];
+            chatArr.push({ from: 'admin', msg: text, ts: Date.now() });
+            
+            document.getElementById('msgContent').value = "";
+            chatAutoScroll = true;
+            renderChatHistory(); // استجابة فورية
+            
+            fetch(`https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus/messages/${targetMsgUser}.json`, {
+                method: 'PUT', body: JSON.stringify({ chat: chatArr, adminKey: 'Adel_Matrix_2026' })
+            });
+        }
+
+        function clearChat(id) {
+            if(confirm("Are you sure you want to delete this conversation?")) {
+                allMessages[id] = { chat: [] };
+                renderDevices({ [id]: { lastSeen: Date.now() } }); 
+                fetch(`https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus/messages/${id}.json`, { method: 'DELETE' }).then(() => showSystemToast("Chat cleared", "success"));
+            }
+        }
+
+        // =====================================
+        // Master Logs Logic (FOOLPROOF Date Filter)
+        // =====================================
+        function clearDateFilter() {
+            document.getElementById('log-date-from').value = '';
+            document.getElementById('log-date-to').value = '';
+            renderLogs();
+        }
+
+        function filterLogsByRange(entries) {
+            const fromStr = document.getElementById('log-date-from').value;
+            const toStr = document.getElementById('log-date-to').value;
+            
+            // لو الخانات فاضية (عن طريق زرار Show All)، هيعرض كل حاجة مهما كانت
+            if (!fromStr && !toStr) return entries; 
+
+            let fromTime = 0, toTime = 9999999999999;
+            if (fromStr) {
+                const f = fromStr.split('-');
+                fromTime = new Date(parseInt(f[0]), parseInt(f[1]) - 1, parseInt(f[2]), 0, 0, 0).getTime();
+            }
+            if (toStr) {
+                const t = toStr.split('-');
+                toTime = new Date(parseInt(t[0]), parseInt(t[1]) - 1, parseInt(t[2]), 23, 59, 59).getTime();
+            }
+
+            return entries.filter(log => {
+                let logTime = log.ts; 
+                if (!logTime && log.date) {
+                    const p = log.date.split(/[-/]/);
+                    if(p.length === 3) {
+                        if(p[0].length === 4) logTime = new Date(p[0], p[1]-1, p[2], 12).getTime();
+                        else logTime = new Date(p[2], p[1]-1, p[0], 12).getTime();
+                    }
+                }
+                // لو السجل مفيهوش أي تاريخ خالص (تالف)، هنعديه عشان ميختفيش
+                if (!logTime) return true; 
+
+                return logTime >= fromTime && logTime <= toTime;
+            });
+        }
+
+        function loadLogs() {
+            document.getElementById('logs-tbody').innerHTML = '<tr><td colspan="6" class="empty-logs">Loading logs from server...</td></tr>';
+            fetch(dbLogsUrl).then(r => r.json()).then(data => { 
+                globalLogs = data || {}; 
+                renderLogs(); 
+            })
+            .catch(() => { document.getElementById('logs-tbody').innerHTML = '<tr><td colspan="6" class="empty-logs" style="color:var(--danger);">Error processing logs.</td></tr>'; });
+        }
+
+        function renderLogs() {
+            const tbody = document.getElementById('logs-tbody');
+            const entries = Object.keys(globalLogs)
+                .map(k => globalLogs[k])
+                .filter(log => log && typeof log === 'object') 
+                .sort((a,b) => (b.ts || 0) - (a.ts || 0));
+                
+            // الكشاف: عرض عدد السجلات الفعلي في السيرفر
+            document.getElementById('total-server-logs').innerText = `Database Records: ${entries.length}`;
+
+            const filtered = filterLogsByRange(entries);
+            
+            if(filtered.length === 0) { 
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-logs">No logs found for the selected date range.</td></tr>`; 
+                return; 
+            }
+            
+            tbody.innerHTML = filtered.map(log => `<tr><td class="mono" style="color: var(--text-muted);">${log.date || '-'} <span style="margin-left:8px; color:#fff;">${log.time || ''}</span></td><td style="font-weight:600;">${log.user || 'Unknown'}</td><td class="mono" style="color: var(--accent); font-weight:700;">${log.awb || '-'}</td><td><span style="background:rgba(255,255,255,0.05); padding:6px 10px; border-radius:6px; font-size:12px; font-weight:600;">${log.mode || '-'}</span></td><td style="color: #cbd5e1;">${log.company || '-'}</td><td style="color: var(--success); font-weight:700; font-size:12px; text-transform:uppercase;">${log.status || 'CLOSED'}</td></tr>`).join('');
+        }
+
+        function exportAdminLogs() {
+            const entries = Object.keys(globalLogs).map(k => globalLogs[k]).filter(log => log && typeof log === 'object').sort((a,b) => (b.ts || 0) - (a.ts || 0));
+            const filtered = filterLogsByRange(entries);
+            
+            if(filtered.length === 0) { showSystemToast("No data to export", "error"); return; }
+            
+            let csv = "Date,Time,User Name,Device ID,AWB,Mode,Company,Status\n";
+            filtered.forEach(l => { csv += `"${l.date || ''}","${l.time || ''}","${l.user || ''}","${l.device || ''}","${l.awb || ''}","${l.mode || ''}","${l.company || ''}","${l.status || ''}"\n`; });
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); 
+            
+            const fromVal = document.getElementById('log-date-from').value || 'All';
+            const toVal = document.getElementById('log-date-to').value || 'All';
+            link.download = `SkyBag_Logs_From_${fromVal}_To_${toVal}.csv`; 
+            
+            link.click();
+        }
+
+        function clearAdminLogs() {
+            const val = prompt("DANGER: Enter Database Master Password to clear all server logs:");
+            if (val === DATABASE_PASSWORD) { fetch(dbLogsUrl, { method: 'DELETE' }).then(() => { showSystemToast("All server logs deleted.", "success"); loadLogs(); }); } 
+            else if (val !== null) showSystemToast("Incorrect Password.", "error");
+        }
+
+        // =====================================
+        // Calendar & Settings Sync
+        // =====================================
+        function cleanDateStr(str) { return str.replace(/\/+/g, '/').trim(); }
+        function renderCalendar() {
+            const month = calDate.getMonth(), year = calDate.getFullYear();
+            document.getElementById('cal-title').innerText = `${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][month]} ${year}`;
+            const firstDay = new Date(year, month, 1).getDay(), daysInMonth = new Date(year, month + 1, 0).getDate();
+            currentHolidays = currentHolidays.map(cleanDateStr).filter(h => h);
+            let html = '';
+            for (let i = 0; i < firstDay; i++) html += `<div class="cal-day empty"></div>`;
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${i}/${month + 1}/${year}`, padStr = `${String(i).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+                const isSel = currentHolidays.includes(dateStr) || currentHolidays.includes(padStr);
+                html += `<div class="cal-day ${isSel ? 'selected' : ''}" onclick="toggleDate('${dateStr}')">${i}</div>`;
+            }
+            document.getElementById('cal-days').innerHTML = html; renderHolsList();
+        }
+        function changeMonth(dir) { calDate.setMonth(calDate.getMonth() + dir); renderCalendar(); }
+        function toggleDate(dateStr) {
+            dateStr = cleanDateStr(dateStr);
+            const p = dateStr.split('/'), padStr = `${p[0].padStart(2, '0')}/${p[1].padStart(2, '0')}/${p[2]}`;
+            const i1 = currentHolidays.indexOf(dateStr), i2 = currentHolidays.indexOf(padStr);
+            if (i1 > -1) currentHolidays.splice(i1, 1); else if (i2 > -1) currentHolidays.splice(i2, 1); else currentHolidays.push(dateStr);
+            renderCalendar();
+        }
+        function renderHolsList() {
+            const sorted = [...currentHolidays].sort((a, b) => { const [d1, m1, y1] = a.split('/').map(Number), [d2, m2, y2] = b.split('/').map(Number); return new Date(y1, m1-1, d1) - new Date(y2, m2-1, d2); });
+            const div = document.getElementById('adminHolsList');
+            if(sorted.length === 0) { div.innerHTML = '<div class="empty-holidays">No exclusions configured.</div>'; return; }
+            div.innerHTML = sorted.map(h => { const [d, m, y] = h.split('/'); return `<div class="hol-item-row"><span class="hol-item-date">${new Date(y, m-1, d).toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' })}</span><button class="hol-item-del" onclick="toggleDate('${h}')">✖</button></div>`; }).join('');
+        }
+
         function fetchSettings() {
             fetch(dbStatusUrl).then(r => r.json()).then(data => {
                 if(data) {
                     document.getElementById('powerSwitch').checked = (data.isActive !== false);
-                    document.getElementById('passInput').value = data.password || '02026';
-                    blockedDevices = data.blockedDevices || [];
-                    currentHolidays = data.holidays || [];
-                    currentAccDb = data.accDb || {};
-                    if(Object.keys(currentAccDb).length > 0) {
-                        document.getElementById('jsonInput').value = JSON.stringify(currentAccDb, null, 4);
-                    }
+                    document.getElementById('passInput').value = data.password || '0282003';
+                    blockedDevices = data.blockedDevices || []; currentHolidays = data.holidays || [];
+                    if(data.accDb) document.getElementById('jsonInput').value = JSON.stringify(data.accDb, null, 4);
                     renderCalendar();
                 }
             });
         }
 
         function fetchData() {
-            Promise.all([
-                fetch(dbDevicesUrl).then(r => r.json()),
-                fetch(dbMessagesUrl).then(r => r.json())
-            ]).then(([devices, messages]) => {
+            Promise.all([fetch(dbDevicesUrl).then(r => r.json()), fetch(dbMessagesUrl).then(r => r.json())]).then(([devices, messages]) => {
                 allMessages = messages || {};
                 renderDevices(devices || {});
-                
-                const sync = document.getElementById('syncStatus');
-                sync.innerHTML = `<span class="sync-dot"></span> Sync Active`;
-                sync.className = "sync-status";
+                if(document.getElementById('msgModal').classList.contains('active')) renderChatHistory();
+                document.getElementById('syncStatus').className = "sync-status";
+                document.getElementById('syncStatus').innerHTML = `<span class="sync-dot"></span> Sync Active`;
             }).catch(() => {
-                const sync = document.getElementById('syncStatus');
-                sync.innerHTML = `<span class="sync-dot" style="background:var(--danger);box-shadow:none;"></span> Offline`;
-                sync.className = "sync-status offline";
+                document.getElementById('syncStatus').className = "sync-status offline";
+                document.getElementById('syncStatus').innerHTML = `<span class="sync-dot"></span> Offline`;
             });
-        }
-
-        function buildMsgHtml(id, userName, msgData, isBlocked) {
-            const blockBtn = isBlocked 
-                ? `<button class="btn btn-success" onclick="toggleBlock('${id}')">Unblock</button>` 
-                : `<button class="btn btn-danger" onclick="toggleBlock('${id}')">Block</button>`;
-                
-            let msgHtml = `<button class="btn btn-msg" onclick="openMessageModal('${id}', '${userName}')">Message</button>`;
-            let replyHtml = '';
-            
-            if (msgData && !msgData.clear) {
-                if (msgData.reply) {
-                    msgHtml = `<button class="btn btn-clear" onclick="clearMessage('${id}')">Clear Chat</button>`;
-                    replyHtml = `<div class="reply-alert"><span>User Reply:</span>${msgData.reply}</div>`;
-                } else if (msgData.text) {
-                    msgHtml = `<button class="btn btn-msg" style="opacity:0.5; cursor:default;">Sent</button><button class="btn btn-clear" style="margin-top:0;" onclick="clearMessage('${id}')">✖</button>`;
-                }
-            }
-            return `${replyHtml}<div class="card-actions">${blockBtn}${msgHtml}</div>`;
         }
 
         function renderDevices(devices) {
-            const grid = document.getElementById('devices-grid');
-            let onlineCount = 0, totalClosed = 0, now = Date.now();
-            let activeIds = [];
-
+            const grid = document.getElementById('devices-grid'); let onlineCount = 0, totalClosed = 0, now = Date.now(), activeIds = [];
             Object.keys(devices).forEach(id => {
-                const dev = devices[id];
-                const isBlocked = blockedDevices.includes(id);
-                // تعتبر الأداة أونلاين لو بعتت بنج خلال 15 ثانية
-                const isOnline = (now - dev.lastSeen) < 15000;
-
+                const dev = devices[id], isBlocked = blockedDevices.includes(id), isOnline = (now - dev.lastSeen) < 15000;
                 if (isOnline || isBlocked) {
-                    activeIds.push(id);
-                    if (isOnline && !isBlocked) onlineCount++;
-                    const count = parseInt(dev.count || 0);
-                    if (isOnline && !isBlocked) totalClosed += count;
-
-                    const userName = dev.user || 'Unknown User';
-                    const initial = userName.charAt(0).toUpperCase();
-                    const msgData = allMessages[id];
+                    activeIds.push(id); if (isOnline && !isBlocked) onlineCount++;
+                    const count = parseInt(dev.count || 0); if (isOnline && !isBlocked) totalClosed += count;
+                    const userName = dev.user || 'Unknown User'; let card = document.getElementById(`device-${id}`);
                     
-                    let existingCard = document.getElementById(`device-${id}`);
+                    const chatArr = allMessages[id]?.chat || [];
+                    const hasUnread = chatArr.length > 0 && chatArr[chatArr.length-1].from === 'user';
+                    
+                    const btnHtml = isBlocked ? `<button class="btn btn-success" onclick="toggleBlock('${id}')">Unblock</button>` : `<button class="btn btn-danger" onclick="toggleBlock('${id}')">Block</button>`;
+                    const msgBtn = `<button class="btn btn-msg" onclick="openMessageModal('${id}', '${userName}')" style="${hasUnread ? 'background:var(--accent); color:#fff;' : ''}">${hasUnread ? 'New Reply!' : 'Chat'}</button>`;
+                    const clearBtn = chatArr.length > 0 ? `<button class="btn" style="color:var(--danger); border-color:transparent;" onclick="clearChat('${id}')">Clear Chat</button>` : '';
 
-                    if (!existingCard) {
-                        existingCard = document.createElement('div');
-                        existingCard.id = `device-${id}`;
-                        existingCard.className = `device-card ${isBlocked ? 'blocked' : ''}`;
-                        
-                        existingCard.innerHTML = `
+                    if (!card) {
+                        card = document.createElement('div'); card.id = `device-${id}`; card.className = `device-card ${isBlocked ? 'blocked' : ''}`;
+                        card.innerHTML = `
                             <div class="user-header">
-                                <div class="avatar">${initial}</div>
-                                <div class="user-info">
-                                    <div class="user-name">${userName} ${isOnline && !isBlocked ? '<div class="status-dot-user"></div>' : ''}</div>
-                                    <div class="device-os mono">${id}</div>
-                                </div>
+                                <div class="avatar">${userName.charAt(0).toUpperCase()}</div>
+                                <div class="user-info"><div class="user-name">${userName} <div class="status-dot-user" style="display:${isOnline&&!isBlocked?'block':'none'}"></div></div><div class="device-os mono">${id}</div></div>
                             </div>
                             <div class="data-panel">
-                                <div class="info-row"><span class="info-label">Active Mode</span><span class="info-val mono dev-mode">${dev.currentMode || 'N/A'}</span></div>
-                                <div class="info-row"><span class="info-label">Last Scanned</span><span class="info-val mono dev-awb">${dev.lastAwb || '-'}</span></div>
-                                <div class="info-row" style="margin-top:8px; padding-top:8px; border-top: 1px solid var(--border);">
-                                    <span class="info-label">Total Closed</span>
-                                    <span class="info-val mono dev-cnt" style="color:var(--success); font-size:16px;">${count}</span>
-                                </div>
+                                <div class="info-row"><span class="info-label">Active Mode</span><span class="info-val mono dev-mode">${dev.currentMode || '-'}</span></div>
+                                <div class="info-row"><span class="info-label">Last Scanned</span><span class="info-val mono dev-awb" style="color:var(--accent);">${dev.lastAwb || '-'}</span></div>
+                                <div class="info-row" style="margin-top:12px; padding-top:12px; border-top: 1px solid var(--border);"><span class="info-label">Total Closed</span><span class="info-val mono dev-cnt" style="color:var(--success); font-size:18px;">${count}</span></div>
                             </div>
-                            <div class="msg-container" data-hash='${JSON.stringify({msg: msgData||{}, blk: isBlocked})}'>
-                                ${buildMsgHtml(id, userName, msgData, isBlocked)}
-                            </div>
+                            <div class="card-actions" id="actions-${id}">${btnHtml}${msgBtn}${clearBtn}</div>
                         `;
-                        grid.appendChild(existingCard);
+                        grid.appendChild(card);
                     } else {
-                        existingCard.className = `device-card ${isBlocked ? 'blocked' : ''}`;
+                        card.className = `device-card ${isBlocked ? 'blocked' : ''}`;
+                        const oldAwb = card.querySelector('.dev-awb').innerText;
+                        const oldCount = card.querySelector('.dev-cnt').innerText;
+                        const oldMode = card.querySelector('.dev-mode').innerText;
                         
-                        const awbEl = existingCard.querySelector('.dev-awb');
-                        if (awbEl && awbEl.innerText !== String(dev.lastAwb || '-')) awbEl.innerText = dev.lastAwb || '-';
+                        if(oldAwb !== (dev.lastAwb || '-')) card.querySelector('.dev-awb').innerText = dev.lastAwb || '-';
+                        if(oldCount !== String(count)) card.querySelector('.dev-cnt').innerText = count;
+                        if(oldMode !== (dev.currentMode || '-')) card.querySelector('.dev-mode').innerText = dev.currentMode || '-';
                         
-                        const cntEl = existingCard.querySelector('.dev-cnt');
-                        if (cntEl && cntEl.innerText !== String(count)) cntEl.innerText = count;
-
-                        const modeEl = existingCard.querySelector('.dev-mode');
-                        if (modeEl && modeEl.innerText !== String(dev.currentMode || 'N/A')) modeEl.innerText = dev.currentMode || 'N/A';
-
-                        const nameEl = existingCard.querySelector('.user-name');
-                        const hasDot = nameEl.querySelector('.status-dot-user');
-                        if (isOnline && !isBlocked) {
-                            if (!hasDot) nameEl.innerHTML = `${userName} <div class="status-dot-user"></div>`;
-                        } else {
-                            if (hasDot) nameEl.innerHTML = userName;
-                        }
-
-                        const msgContainer = existingCard.querySelector('.msg-container');
-                        const newHash = JSON.stringify({msg: msgData||{}, blk: isBlocked});
-                        if (msgContainer && msgContainer.dataset.hash !== newHash) {
-                            msgContainer.dataset.hash = newHash;
-                            msgContainer.innerHTML = buildMsgHtml(id, userName, msgData, isBlocked);
-                        }
+                        card.querySelector('.status-dot-user').style.display = isOnline && !isBlocked ? 'block' : 'none';
+                        document.getElementById(`actions-${id}`).innerHTML = `${btnHtml}${msgBtn}${clearBtn}`;
                     }
                 }
             });
+            Array.from(grid.children).forEach(card => { if (!activeIds.includes(card.id.replace('device-', ''))) card.remove(); });
+            
+            const elTotal = document.getElementById('totalOnline');
+            if (parseInt(elTotal.innerText) !== onlineCount) elTotal.innerText = onlineCount;
+            const elClosed = document.getElementById('totalClosed');
+            if (parseInt(elClosed.innerText) !== totalClosed) elClosed.innerText = totalClosed;
+        }
 
-            Array.from(grid.children).forEach(card => {
-                if (card.id === 'no-devices') {
-                    if (activeIds.length > 0) card.remove();
-                    return;
-                }
-                const cardId = card.id.replace('device-', '');
-                if (!activeIds.includes(cardId)) {
-                    card.remove();
-                }
-            });
+        // Instant Power Switch Action
+        function instantPowerToggle() {
+            const isActive = document.getElementById('powerSwitch').checked;
+            fetch(dbStatusUrl, { method: 'PATCH', body: JSON.stringify({ isActive: isActive }) });
+        }
 
-            if (activeIds.length === 0 && !document.getElementById('no-devices')) {
-                grid.innerHTML = `
-                    <div id="no-devices" style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted); background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--border);">
-                        <div style="font-weight:500;">Scanning network... No active devices found.</div>
-                    </div>`;
+        // Instant Block Logic
+        function toggleBlock(id) { 
+            if(blockedDevices.includes(id)) blockedDevices = blockedDevices.filter(d => d !== id); 
+            else blockedDevices.push(id); 
+            
+            const card = document.getElementById(`device-${id}`);
+            if(card) {
+                card.classList.toggle('blocked', blockedDevices.includes(id));
+                const acts = document.getElementById(`actions-${id}`);
+                if(acts) {
+                    const btn = acts.querySelector('.btn-success, .btn-danger');
+                    if(btn) {
+                        if(blockedDevices.includes(id)){ btn.className = "btn btn-success"; btn.innerText = "Unblock"; }
+                        else { btn.className = "btn btn-danger"; btn.innerText = "Block"; }
+                    }
+                }
             }
-            
-            document.getElementById('totalOnline').innerText = onlineCount;
-            document.getElementById('totalClosed').innerText = totalClosed;
-        }
-
-        // =========================================================================
-        // ACTIONS & SETTINGS
-        // =========================================================================
-        function sendDirectMessage() {
-            const text = document.getElementById('msgContent').value.trim();
-            if(!text) return;
-            
-            fetch(`https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus/messages/${targetMsgUser}.json`, {
-                method: 'PUT',
-                body: JSON.stringify({ text: text, timestamp: Date.now(), adminKey: 'Adel_Matrix_2026' })
-            }).then(response => {
-                if(!response.ok) throw new Error("Unauthorized");
-                closeModal();
-                showSystemToast("Message sent successfully.", "success");
-                fetchData();
-            }).catch(() => showSystemToast("Failed to send message.", "error"));
-        }
-        
-        function clearMessage(id) {
-            fetch(`https://matrix-tool-admin-default-rtdb.firebaseio.com/systemStatus/messages/${id}.json`, { 
-                method: 'PUT',
-                body: JSON.stringify({ clear: true, adminKey: 'Adel_Matrix_2026' })
-            }).then(() => fetchData());
-        }
-
-        function toggleBlock(id) {
-            if(blockedDevices.includes(id)) blockedDevices = blockedDevices.filter(d => d !== id);
-            else blockedDevices.push(id);
-            saveSystemSettings(true);
-            fetchData();
+            fetch(dbStatusUrl, { method: 'PATCH', body: JSON.stringify({ blockedDevices: blockedDevices }) }); 
         }
 
         function saveSystemSettings(silent = false) {
             let parsedAccDb = {};
-            try {
-                const jsonStr = document.getElementById('jsonInput').value.trim();
-                if(jsonStr) parsedAccDb = JSON.parse(jsonStr);
-            } catch (e) {
-                showSystemToast("JSON Syntax Error.", "error"); return;
-            }
-
-            // التأكد من حفظ التواريخ المظبوطة فقط
+            try { const jsonStr = document.getElementById('jsonInput').value.trim(); if(jsonStr) parsedAccDb = JSON.parse(jsonStr); } catch (e) { showSystemToast("JSON Syntax Error.", "error"); return; }
             currentHolidays = currentHolidays.map(cleanDateStr).filter(h => h);
-
-            const config = {
-                isActive: document.getElementById('powerSwitch').checked,
-                password: document.getElementById('passInput').value,
-                holidays: currentHolidays,
-                blockedDevices: blockedDevices,
-                accDb: parsedAccDb,
-                adminKey: 'Adel_Matrix_2026'
-            };
-            
-            fetch(dbStatusUrl, { method: 'PATCH', body: JSON.stringify(config) })
-            .then(response => {
-                if(!response.ok) throw new Error("Unauthorized");
-                if(!silent) showSystemToast("Changes deployed to all tools.", "success");
-            }).catch(() => {
-                if(!silent) showSystemToast("Deployment failed.", "error");
-            });
+            fetch(dbStatusUrl, { method: 'PATCH', body: JSON.stringify({ isActive: document.getElementById('powerSwitch').checked, password: document.getElementById('passInput').value, blockedDevices: blockedDevices, accDb: parsedAccDb, holidays: currentHolidays }) })
+            .then(() => { if(!silent) showSystemToast("Settings deployed.", "success"); });
         }
 
         fetchSettings();
         fetchData();
-        setInterval(fetchData, 400);
+        setInterval(fetchData, 800); 
     </script>
 </body>
 </html>
