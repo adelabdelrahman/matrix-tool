@@ -98,7 +98,7 @@
             ChevronLeft: () => <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>,
             ChevronRight: () => <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>,
             Menu: () => <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>,
-            Chat: () => <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>,
+            Chat: () => <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>,
             Trash: () => <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
         };
 
@@ -152,7 +152,16 @@
             
             const [dbPass, setDbPass] = useState('');
             const [isDbUnlocked, setIsDbUnlocked] = useState(false);
-            const [jsonText, setJsonText] = useState('');
+            
+            // Modified Database GUI States
+            const [localAccDb, setLocalAccDb] = useState({});
+            const [fAccNo, setFAccNo] = useState('');
+            const [fName, setFName] = useState('');
+            const [fType, setFType] = useState('Courier'); 
+            const [fLogic, setFLogic] = useState('default');
+            const [fDays, setFDays] = useState('');
+            const [dbSearch, setDbSearch] = useState(''); // Quick Search for Rules
+
             const [calDate, setCalDate] = useState(new Date());
 
             const [chatModal, setChatModal] = useState({ isOpen: false, targetId: '', targetName: '', text: '' });
@@ -183,7 +192,6 @@
                             accDb: configData.accDb || {},
                             holidays: configData.holidays || []
                         });
-                        if(!isDbUnlocked) setJsonText(JSON.stringify(configData.accDb || {}, null, 4));
                     }
                     setIsOnline(true);
                 } catch (err) { setIsOnline(false); }
@@ -223,14 +231,7 @@
             const deployConfig = async (partialConfig) => {
                 setIsLoading(true);
                 const newConfig = { ...systemConfig, ...partialConfig };
-                
                 let parsedDb = newConfig.accDb;
-                if(isDbUnlocked) {
-                    try {
-                        let cleanStr = jsonText.replace(/'/g, '"').replace(/,\s*}/g, '}').replace(/,\s*\]/g, ']');
-                        parsedDb = JSON.parse(cleanStr);
-                    } catch(e) { showToast("JSON Syntax Validation Failed", "error"); setIsLoading(false); return; }
-                }
 
                 try {
                     await fetch(BASE_URL + '/systemStatus.json', {
@@ -245,7 +246,7 @@
                         })
                     });
                     setSystemConfig(newConfig);
-                    showToast("Configuration Deployed Successfully");
+                    showToast("System Configuration Saved & Deployed!", "success");
                 } catch(e) { showToast("Deployment failed", "error"); }
                 setIsLoading(false);
             };
@@ -390,6 +391,58 @@
                 else hols.push(dateStr);
                 deployConfig({ holidays: hols });
             };
+
+            // Enhanced Database GUI Handlers
+            const handleAddDbRule = () => {
+                if(!fAccNo.trim() || !fName.trim()) {
+                    showToast("⚠️ Account Number and Company Name are required!", "error");
+                    return;
+                }
+                const rule = { n: fName.trim() };
+                if (fType) rule.p = fType; 
+                if (fLogic === 'sameday') rule.sd = true;
+                if (fLogic === 'plusdays') {
+                    if(!fDays || isNaN(fDays)) {
+                        showToast("⚠️ Please specify the number of days to add!", "error");
+                        return;
+                    }
+                    rule.pd = parseInt(fDays) || 0;
+                }
+
+                setLocalAccDb(prev => ({...prev, [fAccNo.trim()]: rule}));
+                showToast(`✅ Rule for Account [${fAccNo.trim()}] Added/Updated!`, "success");
+                setFAccNo(''); setFName(''); setFType('Courier'); setFLogic('default'); setFDays('');
+            };
+
+            const handleDeleteDbRule = (acc) => {
+                if(confirm(`⚠️ Are you sure you want to completely delete the rule for Account [${acc}]?`)) {
+                    setLocalAccDb(prev => {
+                        const copy = {...prev};
+                        delete copy[acc];
+                        return copy;
+                    });
+                    showToast(`🗑️ Account [${acc}] deleted successfully!`, "success");
+                }
+            };
+
+            const handleUnlockDb = () => {
+                if(dbPass === DATABASE_PASSWORD) {
+                    setLocalAccDb(systemConfig.accDb || {});
+                    setIsDbUnlocked(true); 
+                    showToast("Vault Unlocked Successfully", "success");
+                } else {
+                    showToast("⚠️ Access Denied: Incorrect Password", "error"); 
+                }
+            };
+
+            // Search filter for Database Table
+            const filteredLocalDb = useMemo(() => {
+                const q = dbSearch.trim().toLowerCase();
+                if(!q) return Object.entries(localAccDb);
+                return Object.entries(localAccDb).filter(([acc, rule]) => {
+                    return acc.toLowerCase().includes(q) || (rule.n && rule.n.toLowerCase().includes(q));
+                });
+            }, [localAccDb, dbSearch]);
 
             if (!isAuth) {
                 return (
@@ -681,24 +734,126 @@
                                 )}
 
                                 {activeView === 'database' && (
-                                    <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-200px)] min-h-[500px] fade-in">
+                                    <div className="max-w-6xl mx-auto flex flex-col h-full min-h-[700px] fade-in pb-10">
                                         {!isDbUnlocked ? (
-                                            <div className="m-auto w-full max-w-sm">
+                                            <div className="m-auto w-full max-w-sm pt-20">
                                                 <div className="bg-white p-8 rounded-2xl border border-borderLight shadow-floating text-center transform transition-all hover:-translate-y-1">
                                                     <Icons.Lock />
                                                     <h3 className="text-xl font-bold text-brand mt-6 mb-2">Secure Vault</h3>
-                                                    <p className="text-sm text-slate-500 mb-8 font-medium">Enter Master Key to access JSON records.</p>
-                                                    <input type="password" value={dbPass} onChange={e=>setDbPass(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') { if(dbPass===DATABASE_PASSWORD) setIsDbUnlocked(true); else showToast("Access Denied", "error"); }}} placeholder="••••••••" className="w-full bg-surface border border-borderLight rounded-xl px-4 py-3.5 text-center text-xl font-mono tracking-[0.5em] text-brand font-bold mb-6 focus:outline-none focus:border-accent transition-colors shadow-inner-light" autoFocus />
-                                                    <button onClick={()=>{ if(dbPass===DATABASE_PASSWORD) setIsDbUnlocked(true); else showToast("Access Denied", "error"); }} className="w-full bg-brand hover:bg-brandHover text-white font-bold py-3.5 rounded-xl transition-all shadow-md">Decrypt Vault</button>
+                                                    <p className="text-sm text-slate-500 mb-8 font-medium">Enter Master Key to access Database records.</p>
+                                                    <input type="password" value={dbPass} onChange={e=>setDbPass(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') handleUnlockDb() }} placeholder="••••••••" className="w-full bg-surface border border-borderLight rounded-xl px-4 py-3.5 text-center text-xl font-mono tracking-[0.5em] text-brand font-bold mb-6 focus:outline-none focus:border-accent transition-colors shadow-inner-light" autoFocus />
+                                                    <button onClick={handleUnlockDb} className="w-full bg-brand hover:bg-brandHover text-white font-bold py-3.5 rounded-xl transition-all shadow-md">Decrypt Vault</button>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col h-full bg-white rounded-xl border border-borderLight shadow-card overflow-hidden">
-                                                <div className="px-6 py-4 border-b border-borderLight bg-surface flex justify-between items-center shrink-0">
-                                                    <h3 className="font-bold text-brand flex items-center gap-2"><Icons.Server /> Accounts Mapping Data</h3>
-                                                    <button onClick={()=>deployConfig({})} className="bg-brand hover:bg-brandHover text-white px-6 py-2.5 text-sm font-bold rounded-lg transition-colors shadow-sm transform hover:-translate-y-0.5">Commit Changes</button>
+                                            <div className="flex flex-col h-full space-y-6">
+                                                <div className="bg-white rounded-xl border border-borderLight shadow-card p-6">
+                                                    <div className="flex justify-between items-center mb-6 border-b border-borderLight pb-4">
+                                                        <div>
+                                                            <h3 className="text-lg font-bold text-brand flex items-center gap-2"><Icons.Server /> Accounts Manager</h3>
+                                                            <p className="text-sm text-slate-500 font-medium mt-1">Add or edit rules to automatically configure dates, company names, and operation types.</p>
+                                                        </div>
+                                                        <button onClick={()=>deployConfig({accDb: localAccDb})} className="bg-brand hover:bg-brandHover text-white px-8 py-3 font-bold rounded-lg transition-all shadow-md transform hover:-translate-y-0.5 whitespace-nowrap">Commit Changes To Live</button>
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-col gap-5 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                                                            <div className="md:col-span-2">
+                                                                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Account No.</label>
+                                                                <input type="text" value={fAccNo} onChange={e=>setFAccNo(e.target.value)} placeholder="e.g. 949000" className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm font-mono font-bold focus:border-accent focus:ring-2 focus:ring-blue-100 outline-none shadow-sm transition-all" />
+                                                            </div>
+                                                            <div className="md:col-span-4">
+                                                                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Company Name</label>
+                                                                <input type="text" value={fName} onChange={e=>setFName(e.target.value)} placeholder="e.g. Credit Agricole" className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm font-bold focus:border-accent focus:ring-2 focus:ring-blue-100 outline-none shadow-sm transition-all" />
+                                                            </div>
+                                                            <div className="md:col-span-3">
+                                                                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Type / Product</label>
+                                                                <select value={fType} onChange={e=>setFType(e.target.value)} className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm font-bold focus:border-accent focus:ring-2 focus:ring-blue-100 outline-none shadow-sm cursor-pointer transition-all">
+                                                                    <option value="Courier">Courier</option>
+                                                                    <option value="Personal">Personal</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="md:col-span-3">
+                                                                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Date Logic</label>
+                                                                <select value={fLogic} onChange={e=>setFLogic(e.target.value)} className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm font-bold focus:border-accent focus:ring-2 focus:ring-blue-100 outline-none shadow-sm cursor-pointer transition-all">
+                                                                    <option value="default">Default Mode Logic</option>
+                                                                    <option value="sameday">Same Day (Today)</option>
+                                                                    <option value="plusdays">Add Extra Days (+X)</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-end justify-between border-t border-slate-200 pt-5 mt-2">
+                                                            <div className="w-[200px]">
+                                                                {fLogic === 'plusdays' && (
+                                                                    <div className="fade-in">
+                                                                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Days to Add (+)</label>
+                                                                        <input type="number" value={fDays} onChange={e=>setFDays(e.target.value)} placeholder="e.g. 5" className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-sm font-mono font-bold focus:border-accent focus:ring-2 focus:ring-blue-100 outline-none shadow-sm transition-all" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <button onClick={handleAddDbRule} className="bg-accent hover:bg-accentHover text-white font-bold px-10 py-3 rounded-lg text-sm transition-all shadow-md transform hover:-translate-y-0.5">Save Rule to Database</button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} spellCheck="false" className="w-full flex-1 bg-white p-6 text-accent font-mono text-[13px] leading-relaxed focus:outline-none resize-none custom-scrollbar"></textarea>
+
+                                                <div className="bg-white rounded-xl border border-borderLight shadow-card flex-1 flex flex-col overflow-hidden min-h-[600px]">
+                                                    <div className="px-8 py-5 border-b border-borderLight bg-surface flex justify-between items-center shrink-0">
+                                                        <h3 className="font-bold text-brand text-sm">Configured Accounts Table</h3>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="relative">
+                                                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400"><Icons.Search/></div>
+                                                                <input type="text" placeholder="Search Account No or Name..." value={dbSearch} onChange={e=>setDbSearch(e.target.value)} className="w-64 bg-white border border-slate-300 rounded-lg pl-10 pr-4 py-2 text-sm focus:border-accent outline-none shadow-sm font-medium" />
+                                                            </div>
+                                                            <span className="bg-slate-200 text-slate-700 px-3 py-1.5 rounded text-xs font-mono font-bold shadow-sm border border-slate-300">{Object.keys(localAccDb).length} Rules Registered</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 overflow-auto bg-slate-50 p-0">
+                                                        <table className="w-full text-left border-collapse whitespace-nowrap">
+                                                            <thead className="bg-white sticky top-0 z-10 shadow-[0_1px_0_#cbd5e1]">
+                                                                <tr>
+                                                                    <th className="px-8 py-5 text-sm font-extrabold text-slate-600 uppercase tracking-wider border-b border-borderLight">Acc.No</th>
+                                                                    <th className="px-8 py-5 text-sm font-extrabold text-slate-600 uppercase tracking-wider border-b border-borderLight">Company Name</th>
+                                                                    <th className="px-8 py-5 text-sm font-extrabold text-slate-600 uppercase tracking-wider border-b border-borderLight">Type / Product</th>
+                                                                    <th className="px-8 py-5 text-sm font-extrabold text-slate-600 uppercase tracking-wider border-b border-borderLight">Date Logic Config</th>
+                                                                    <th className="px-8 py-5 text-sm font-extrabold text-slate-600 uppercase tracking-wider border-b border-borderLight text-right">Actions</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-slate-200 text-base">
+                                                                {filteredLocalDb.map(([acc, rule]) => (
+                                                                    <tr key={acc} className="bg-white hover:bg-blue-50/50 transition-colors group">
+                                                                        <td className="px-8 py-6 font-mono font-extrabold text-accent text-lg">{acc}</td>
+                                                                        <td className="px-8 py-6 font-bold text-slate-800">{rule.n || '-'}</td>
+                                                                        <td className="px-8 py-6 font-bold">
+                                                                            {(!rule.p || rule.p === 'Courier') ? (
+                                                                                <span className="bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-extrabold shadow-sm tracking-wide">COURIER</span>
+                                                                            ) : (
+                                                                                <span className="bg-purple-100 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg text-xs font-extrabold shadow-sm tracking-wide">PERSONAL</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-8 py-6">
+                                                                            {rule.sd ? <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm tracking-wide">Same Day Delivery</span> : rule.pd != null ? <span className="bg-blue-100 text-blue-800 border border-blue-300 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm tracking-wide">+{rule.pd} Extra Days</span> : <span className="bg-slate-100 text-slate-600 border border-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm tracking-wide">Default Operation</span>}
+                                                                        </td>
+                                                                        <td className="px-8 py-6 text-right">
+                                                                            <button onClick={() => {
+                                                                                setFAccNo(acc); setFName(rule.n||''); 
+                                                                                setFType(rule.p || 'Courier');
+                                                                                setFLogic(rule.sd ? 'sameday' : (rule.pd != null ? 'plusdays' : 'default'));
+                                                                                setFDays(rule.pd || '');
+                                                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                            }} className="text-slate-500 hover:text-accent mr-5 font-extrabold text-[12px] uppercase tracking-wider transition-colors bg-white border border-slate-200 px-4 py-2 rounded-lg shadow-sm hover:shadow-md">Edit</button>
+                                                                            
+                                                                            <button onClick={() => handleDeleteDbRule(acc)} className="text-danger hover:text-white hover:bg-danger font-extrabold text-[12px] uppercase tracking-wider transition-colors bg-white border border-red-200 px-4 py-2 rounded-lg shadow-sm hover:shadow-md">Delete</button>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                                {filteredLocalDb.length === 0 && (
+                                                                    <tr><td colSpan="5" className="px-8 py-20 text-center text-slate-400 font-medium bg-slate-50">No accounts found matching your search.</td></tr>
+                                                                )}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
