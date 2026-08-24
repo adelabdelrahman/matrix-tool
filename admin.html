@@ -45,32 +45,20 @@
 
     <style>
         body { background-color: #f8fafc; color: #0f172a; margin: 0; overflow: hidden; -webkit-font-smoothing: antialiased; }
-        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid transparent; background-clip: padding-box; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; border: 2px solid transparent; background-clip: padding-box; }
-
         .fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         .pulse-indicator { animation: pulseIndicator 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulseIndicator { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
         .spinner { border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
         input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; transition: 0.2s; }
         input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; color: #2563eb; }
-        
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        
-        .tooltip .tooltip-text {
-            visibility: hidden; width: max-content; background-color: #0f172a; color: #fff; text-align: center;
-            border-radius: 6px; padding: 6px 12px; position: absolute; z-index: 50; top: 50%;
-            left: 110%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s;
-            font-size: 12px; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); pointer-events: none;
-        }
+        .tooltip .tooltip-text { visibility: hidden; width: max-content; background-color: #0f172a; color: #fff; text-align: center; border-radius: 6px; padding: 6px 12px; position: absolute; z-index: 50; top: 50%; left: 110%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s; font-size: 12px; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); pointer-events: none; }
         @media (min-width: 768px) { .tooltip:hover .tooltip-text { visibility: visible; opacity: 1; } }
     </style>
 </head>
@@ -98,8 +86,9 @@
             ChevronLeft: () => <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>,
             ChevronRight: () => <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>,
             Menu: () => <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>,
-            Chat: () => <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>,
-            Trash: () => <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Chat: () => <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>,
+            Trash: () => <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>,
+            Robot: () => <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
         };
 
         const ToastAlert = ({ msg, type, onClose }) => {
@@ -129,7 +118,6 @@
             const dd = String(todayLocal.getDate()).padStart(2, '0');
             const todayStr = `${yyyy}-${mm}-${dd}`;
 
-            // App States
             const [isAuth, setIsAuth] = useState(() => localStorage.getItem('mat_admin_auth') === 'true');
             const [loginKey, setLoginKey] = useState('');
             const [activeView, setActiveView] = useState('monitoring');
@@ -137,16 +125,16 @@
             const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => window.innerWidth < 768);
             const [isLoading, setIsLoading] = useState(false);
 
-            // Data State
             const [devices, setDevices] = useState({});
             const [logs, setLogs] = useState({});
             const [messages, setMessages] = useState({});
-            const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [] });
+            const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [] });
             const [isOnline, setIsOnline] = useState(true);
 
-            // Logs Sub-States (with Deferred Value for butter smooth typing)
+            // Filters for Audit Log
             const [searchUserAwb, setSearchUserAwb] = useState('');
             const [searchAccNo, setSearchAccNo] = useState('');
+            const [showApOnly, setShowApOnly] = useState(false); // New Filter for Auto-Pilot Only
             const deferredUserAwb = useDeferredValue(searchUserAwb);
             const deferredAccNo = useDeferredValue(searchAccNo);
             const [logFrom, setLogFrom] = useState(todayStr);
@@ -155,7 +143,6 @@
             const [dbPass, setDbPass] = useState('');
             const [isDbUnlocked, setIsDbUnlocked] = useState(false);
             
-            // Database GUI States
             const [localAccDb, setLocalAccDb] = useState({});
             const [fAccNo, setFAccNo] = useState('');
             const [fName, setFName] = useState('');
@@ -192,7 +179,8 @@
                             password: configData.password || '0282003',
                             blockedDevices: configData.blockedDevices || [],
                             accDb: configData.accDb || {},
-                            holidays: configData.holidays || []
+                            holidays: configData.holidays || [],
+                            autoPilotUsers: configData.autoPilotUsers || []
                         });
                     }
                     setIsOnline(true);
@@ -244,11 +232,12 @@
                             password: newConfig.password,
                             blockedDevices: newConfig.blockedDevices,
                             accDb: parsedDb,
-                            holidays: newConfig.holidays.map(d => d.replace(/\/+/g, '/').trim()).filter(Boolean)
+                            holidays: newConfig.holidays.map(d => d.replace(/\/+/g, '/').trim()).filter(Boolean),
+                            autoPilotUsers: newConfig.autoPilotUsers
                         })
                     });
                     setSystemConfig(newConfig);
-                    showToast("System Configuration Saved & Deployed!", "success");
+                    showToast("System Configuration Deployed!", "success");
                 } catch(e) { showToast("Deployment failed", "error"); }
                 setIsLoading(false);
             };
@@ -257,6 +246,13 @@
                 let blocks = [...systemConfig.blockedDevices];
                 if(blocks.includes(id)) blocks = blocks.filter(b => b !== id); else blocks.push(id);
                 deployConfig({ blockedDevices: blocks });
+            };
+
+            const toggleAutoPilot = (id) => {
+                let apUsers = [...(systemConfig.autoPilotUsers || [])];
+                if(apUsers.includes(id)) apUsers = apUsers.filter(u => u !== id); else apUsers.push(id);
+                deployConfig({ autoPilotUsers: apUsers });
+                showToast(apUsers.includes(id) ? "Auto-Pilot Enabled for Agent" : "Auto-Pilot Disabled", "success");
             };
 
             const openChat = (id, name) => {
@@ -305,7 +301,6 @@
                 return 0;
             };
 
-            // Using Deferred Values for Search to eliminate lag completely!
             const processedLogs = useMemo(() => {
                 const fVal = dateToNumeric(logFrom, true);
                 const tVal = dateToNumeric(logTo, true);
@@ -316,6 +311,9 @@
                 entries.sort((a,b) => (b.ts||0) - (a.ts||0));
                 
                 return entries.filter(log => {
+                    // Auto-Pilot Filter Check
+                    if(showApOnly && !log.isAutoPilot) return false;
+
                     if(qUserAwb) {
                         const matchUser = (log.user||'').toLowerCase().includes(qUserAwb);
                         const matchAwb = (log.awb||'').toLowerCase().includes(qUserAwb);
@@ -333,13 +331,14 @@
                     if(tVal) return lVal <= tVal;
                     return true;
                 });
-            }, [logs, logFrom, logTo, deferredUserAwb, deferredAccNo]);
+            }, [logs, logFrom, logTo, deferredUserAwb, deferredAccNo, showApOnly]);
 
             const showAllLogs = () => {
                 setLogFrom('');
                 setLogTo('');
                 setSearchUserAwb('');
                 setSearchAccNo('');
+                setShowApOnly(false);
             };
 
             const escapeCSV = (val) => {
@@ -358,7 +357,7 @@
                         return; 
                     }
                     
-                    let csv = "\uFEFFDate,Time,Agent Name,AWB Num,Mode,Account Name,Customer Name,ID.No,Acc.No,Status\n";
+                    let csv = "\uFEFFDate,Time,Agent Name,AWB Num,Mode,Account Name,Customer Name,ID.No,Acc.No,Status,Method\n";
                     
                     dataToExport.forEach(l => { 
                         csv += [
@@ -371,7 +370,8 @@
                             escapeCSV(l.customerName), 
                             escapeCSV(l.idNo), 
                             escapeCSV(l.accNo), 
-                            escapeCSV(l.status || 'CLOSED')
+                            escapeCSV(l.status || 'CLOSED'),
+                            escapeCSV(l.isAutoPilot ? 'Robot' : 'Manual')
                         ].join(",") + "\n";
                     });
                     
@@ -379,7 +379,7 @@
                     const link = document.createElement("a"); 
                     link.href = URL.createObjectURL(blob);
                     
-                    link.download = `Mat-Tool_Audit.csv`; 
+                    link.download = `Mat-Tool_Audit_${showApOnly ? 'Robot' : 'All'}.csv`; 
                     link.click();
                     setIsLoading(false);
                 }, 100);
@@ -579,18 +579,24 @@
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                             {activeDeviceList.map(dev => {
                                                 const isBlocked = systemConfig.blockedDevices.includes(dev.id);
+                                                const isAutoPilotAuth = (systemConfig.autoPilotUsers || []).includes(dev.id);
                                                 const isO = (Date.now() - dev.lastSeen) < 15000;
                                                 
                                                 if(!isO && !isBlocked) return null;
 
                                                 const devChat = messages[dev.id]?.chat || [];
                                                 const hasUnread = devChat.length > 0 && devChat[devChat.length-1].from === 'user';
+                                                
+                                                // Monitor Live AP Activity
+                                                const isApActiveNow = dev.apActive;
+                                                const apStats = dev.apStats || {rem:0, succ:0, fail:0};
 
                                                 return (
                                                     <div key={dev.id} className={`bg-white rounded-xl border p-4 sm:p-5 transition-all shadow-card hover:-translate-y-1 hover:shadow-floating ${isBlocked ? 'border-red-200 bg-red-50/30' : 'border-borderLight hover:border-accent/40'}`}>
                                                         <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 pb-4 sm:pb-5 border-b border-slate-100">
-                                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-50 border border-borderLight flex items-center justify-center text-slate-600 font-bold text-base sm:text-lg shrink-0 shadow-inner-light">
+                                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-50 border border-borderLight flex items-center justify-center text-slate-600 font-bold text-base sm:text-lg shrink-0 shadow-inner-light relative">
                                                                 {(dev.user||'U').charAt(0).toUpperCase()}
+                                                                {isAutoPilotAuth && <div className="absolute -bottom-1 -right-1 bg-purple-500 text-white rounded-full p-1 shadow-sm"><Icons.Robot/></div>}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="font-bold text-brand flex items-center gap-2 truncate text-sm sm:text-base">
@@ -605,12 +611,31 @@
                                                             <div className="flex justify-between items-center text-xs sm:text-sm"><span className="text-slate-500 font-medium">Active AWB</span><span className="font-mono font-bold text-accent">{dev.lastAwb||'-'}</span></div>
                                                             <div className="flex justify-between items-center text-xs sm:text-sm pt-2 sm:pt-3 border-t border-slate-100"><span className="text-slate-500 font-medium">Daily Output</span><span className="font-mono font-extrabold text-success text-base sm:text-lg">{dev.count||0}</span></div>
                                                         </div>
-                                                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                                                            <button onClick={()=>toggleDeviceBlock(dev.id)} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all border shadow-sm ${isBlocked ? 'bg-white text-success border-green-200 hover:bg-green-50' : 'bg-white text-danger border-red-200 hover:bg-red-50'}`}>
-                                                                {isBlocked ? 'Unblock' : 'Block User'}
-                                                            </button>
-                                                            <button onClick={()=>openChat(dev.id, dev.user||'Agent')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all border shadow-sm flex items-center justify-center gap-1.5 sm:gap-2 ${hasUnread ? 'bg-accent text-white border-accent hover:bg-accentHover pulse-indicator' : 'bg-white text-accent border-blue-200 hover:bg-blue-50'}`}>
-                                                                <Icons.Chat /> {hasUnread ? 'New Reply!' : 'Chat'}
+                                                        
+                                                        {isApActiveNow && (
+                                                            <div className="mb-5 bg-purple-50 border border-purple-200 p-3 rounded-lg fade-in">
+                                                                <div className="flex justify-between items-center mb-2">
+                                                                    <span className="text-xs font-bold text-purple-700 flex items-center gap-1.5"><span className="pulse-indicator">🤖</span> Auto-Pilot Running</span>
+                                                                    <span className="text-xs font-mono font-bold text-purple-700">{apStats.rem} Left</span>
+                                                                </div>
+                                                                <div className="flex justify-between text-[10px] font-bold">
+                                                                    <span className="text-emerald-600">✅ {apStats.succ} Success</span>
+                                                                    <span className="text-red-500">❌ {apStats.fail} Failed</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex flex-col gap-2">
+                                                            <div className="flex gap-2 sm:gap-3">
+                                                                <button onClick={()=>toggleDeviceBlock(dev.id)} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm ${isBlocked ? 'bg-white text-success border-green-200 hover:bg-green-50' : 'bg-white text-danger border-red-200 hover:bg-red-50'}`}>
+                                                                    {isBlocked ? 'Unblock' : 'Block User'}
+                                                                </button>
+                                                                <button onClick={()=>openChat(dev.id, dev.user||'Agent')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-1.5 sm:gap-2 ${hasUnread ? 'bg-accent text-white border-accent hover:bg-accentHover pulse-indicator' : 'bg-white text-accent border-blue-200 hover:bg-blue-50'}`}>
+                                                                    <Icons.Chat /> {hasUnread ? 'New Reply!' : 'Chat'}
+                                                                </button>
+                                                            </div>
+                                                            <button onClick={()=>toggleAutoPilot(dev.id)} className={`w-full py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-2 ${isAutoPilotAuth ? 'bg-purple-50 text-purple-700 border-purple-300 hover:bg-purple-100' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
+                                                                <Icons.Robot /> {isAutoPilotAuth ? 'Revoke Auto-Pilot' : 'Grant Auto-Pilot'}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -628,79 +653,95 @@
 
                                 {activeView === 'logs' && (
                                     <div className="space-y-4 sm:space-y-6">
-                                        <div className="bg-white p-4 sm:p-5 rounded-xl border border-borderLight shadow-card flex flex-col xl:flex-row gap-4 sm:gap-5 justify-between xl:items-end transition-all">
-                                            <div className="flex flex-col md:flex-row gap-3 sm:gap-4 flex-wrap flex-1 items-stretch md:items-end">
-                                                <div className="w-full md:flex-1 min-w-[200px]">
+                                        <div className="bg-white p-5 rounded-xl border border-borderLight shadow-card transition-all">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-5 items-end">
+                                                
+                                                <div className="lg:col-span-1">
                                                     <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">User / AWB Search</label>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 group-hover:text-accent transition-colors"><Icons.Search/></div>
-                                                        <input type="text" placeholder="AWB or User Name" value={searchUserAwb} onChange={e=>setSearchUserAwb(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg pl-10 pr-3 py-2 sm:py-2.5 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors shadow-inner-light" />
+                                                        <input type="text" placeholder="Search..." value={searchUserAwb} onChange={e=>setSearchUserAwb(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg pl-10 pr-3 py-2 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors" />
                                                     </div>
                                                 </div>
-                                                <div className="w-full md:flex-1 min-w-[150px]">
-                                                    <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Account No Search</label>
+                                                
+                                                <div className="lg:col-span-1">
+                                                    <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Account No</label>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 group-hover:text-accent transition-colors"><Icons.Server/></div>
-                                                        <input type="text" placeholder="Acc.No..." value={searchAccNo} onChange={e=>setSearchAccNo(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg pl-10 pr-3 py-2 sm:py-2.5 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors shadow-inner-light" />
+                                                        <input type="text" placeholder="Acc.No..." value={searchAccNo} onChange={e=>setSearchAccNo(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg pl-10 pr-3 py-2 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors" />
                                                     </div>
                                                 </div>
-                                                <div className="w-full sm:w-[calc(50%-0.5rem)] md:w-[130px]">
+                                                
+                                                <div className="lg:col-span-1">
                                                     <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">From Date</label>
-                                                    <input type="date" value={logFrom} onChange={e=>setLogFrom(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors shadow-inner-light" />
+                                                    <input type="date" value={logFrom} onChange={e=>setLogFrom(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg px-3 py-2 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors" />
                                                 </div>
-                                                <div className="w-full sm:w-[calc(50%-0.5rem)] md:w-[130px]">
+                                                
+                                                <div className="lg:col-span-1">
                                                     <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">To Date</label>
-                                                    <input type="date" value={logTo} onChange={e=>setLogTo(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors shadow-inner-light" />
+                                                    <input type="date" value={logTo} onChange={e=>setLogTo(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg px-3 py-2 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors" />
                                                 </div>
-                                                <button onClick={showAllLogs} className="w-full sm:w-auto h-[38px] sm:h-[42px] px-5 bg-brand hover:bg-brandHover text-white font-bold text-xs sm:text-sm rounded-lg transition-colors shadow-sm whitespace-nowrap">Show All</button>
-                                            </div>
-                                            <div className="flex gap-3 shrink-0">
-                                                <button onClick={exportAuditCSV} className="w-full xl:w-auto justify-center h-[38px] sm:h-[42px] px-5 bg-success hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2 font-bold text-xs sm:text-sm transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"><Icons.Download/> Export CSV</button>
+
+                                                <div className="lg:col-span-2 flex gap-2">
+                                                    <button onClick={showAllLogs} className="flex-1 h-[38px] bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-lg transition-colors shadow-sm">Reset</button>
+                                                    <button onClick={()=>setShowApOnly(!showApOnly)} title="Show Auto-Pilot Data Only" className={`flex-1 h-[38px] flex items-center justify-center gap-1.5 font-bold text-xs rounded-lg transition-colors shadow-sm border ${showApOnly ? 'bg-purple-600 text-white border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'}`}>
+                                                        <Icons.Robot /> {showApOnly ? 'Robot Only' : 'Filter Robot'}
+                                                    </button>
+                                                    <button onClick={exportAuditCSV} title="Download CSV" className="w-[45px] h-[38px] flex items-center justify-center bg-success hover:bg-emerald-700 text-white rounded-lg transition-all shadow-md transform hover:-translate-y-0.5"><Icons.Download/></button>
+                                                </div>
                                             </div>
                                         </div>
                                         
-                                        {/* Beautiful, responsive Log Table */}
-                                        <div className="bg-white border border-borderLight rounded-xl shadow-card overflow-hidden flex flex-col h-[calc(100vh-220px)] sm:h-[calc(100vh-280px)] min-h-[400px] sm:min-h-[500px]">
-                                            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-borderLight bg-surface flex justify-between items-center shrink-0">
-                                                <span className="font-bold text-brand text-xs sm:text-sm">Audit Trail Records</span>
+                                        <div className="bg-white border border-borderLight rounded-xl shadow-card overflow-hidden flex flex-col h-[calc(100vh-220px)] sm:h-[calc(100vh-280px)] min-h-[400px]">
+                                            <div className="px-4 sm:px-6 py-3 border-b border-borderLight bg-surface flex justify-between items-center shrink-0">
+                                                <span className="font-bold text-brand text-xs sm:text-sm flex items-center gap-2">
+                                                    Audit Trail Records {showApOnly && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] uppercase">Auto-Pilot View</span>}
+                                                </span>
                                                 <span className="bg-white text-slate-700 px-3 py-1 rounded-md text-[10px] sm:text-xs font-mono font-bold shadow-sm border border-slate-200">{processedLogs.length} Logs</span>
                                             </div>
                                             <div className="flex-1 overflow-x-auto bg-slate-50">
-                                                <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1000px] sm:min-w-[1200px]">
+                                                <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
                                                     <thead className="bg-white sticky top-0 z-10 shadow-[0_1px_0_#e2e8f0]">
                                                         <tr>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Date & Time</th>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Agent Name</th>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">AWB Number</th>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Mode</th>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Account Name</th>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Customer Name</th>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">ID.No</th>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Acc.No</th>
-                                                            <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Status</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Method</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Date & Time</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Agent Name</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">AWB Number</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Mode</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Company</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Customer Name</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">ID.No</th>
+                                                            <th className="px-4 py-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-borderLight">Status</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                                                         {displayLogs.map((log, i) => (
                                                             <tr key={i} className="bg-white hover:bg-blue-50/50 transition-colors group cursor-default">
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                                    {log.isAutoPilot ? 
+                                                                        <span className="flex items-center gap-1 text-purple-600 font-bold text-[11px]"><Icons.Robot/> Robot</span> : 
+                                                                        <span className="text-slate-400 font-medium text-[11px]">Manual</span>
+                                                                    }
+                                                                </td>
+                                                                <td className="px-4 py-3 whitespace-nowrap">
                                                                     <div className="flex flex-col">
-                                                                        <span className="text-slate-700 font-mono font-bold text-xs sm:text-sm">{log.date}</span>
-                                                                        <span className="text-slate-400 font-mono text-[10px] sm:text-xs font-medium">{log.time}</span>
+                                                                        <span className="text-slate-700 font-mono font-bold text-xs">{log.date}</span>
+                                                                        <span className="text-slate-400 font-mono text-[10px] font-medium">{log.time}</span>
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 font-semibold text-brand text-xs sm:text-sm whitespace-nowrap">{log.user||'-'}</td>
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                                                                    <span className="font-mono font-extrabold text-accent bg-blue-50/50 group-hover:bg-blue-100/70 px-2 py-1 rounded transition-colors text-xs sm:text-sm border border-blue-100">{log.awb||'-'}</span>
+                                                                <td className="px-4 py-3 font-semibold text-brand text-xs whitespace-nowrap">{log.user||'-'}</td>
+                                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                                    <span className="font-mono font-extrabold text-accent bg-blue-50/50 group-hover:bg-blue-100/70 px-2 py-1 rounded transition-colors text-xs border border-blue-100">{log.awb||'-'}</span>
                                                                 </td>
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap"><span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-bold border border-slate-200 shadow-sm uppercase tracking-wide">{log.mode||'-'}</span></td>
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-slate-700 text-xs sm:text-sm max-w-[150px] truncate" title={log.company}>{log.company||'-'}</td>
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 text-slate-500 text-xs sm:text-sm max-w-[150px] truncate" title={log.customerName}>{log.customerName||'-'}</td>
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 font-mono text-slate-500 text-xs sm:text-sm">{log.idNo||'-'}</td>
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 font-mono font-bold text-slate-700 text-xs sm:text-sm">{log.accNo||'-'}</td>
-                                                                <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                                                                    <span className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-sm border ${
-                                                                        (log.status||'').toLowerCase().includes('delivered') || (log.status||'') == '6' 
+                                                                <td className="px-4 py-3 whitespace-nowrap"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold border border-slate-200 uppercase">{log.mode||'-'}</span></td>
+                                                                <td className="px-4 py-3 font-bold text-slate-700 text-xs max-w-[120px] truncate" title={log.company}>{log.company||'-'}</td>
+                                                                <td className="px-4 py-3 text-slate-500 text-xs max-w-[120px] truncate" title={log.customerName}>{log.customerName||'-'}</td>
+                                                                <td className="px-4 py-3 font-mono text-slate-500 text-xs">{log.idNo||'-'}</td>
+                                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase shadow-sm border ${
+                                                                        (log.status||'').toLowerCase().includes('failed') || (log.status||'').toLowerCase().includes('error')
+                                                                        ? 'bg-red-50 text-red-700 border-red-200'
+                                                                        : (log.status||'').toLowerCase().includes('delivered') || (log.status||'') == '6' 
                                                                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
                                                                         : (log.status||'').toLowerCase().includes('return') || (log.status||'').toLowerCase().includes('mobile switched') || (log.status||'').toLowerCase().includes('no answer')
                                                                         ? 'bg-orange-50 text-orange-700 border-orange-200'
