@@ -69,7 +69,6 @@
         const { useState, useEffect, useRef, useMemo, useDeferredValue } = React;
 
         const ADMIN_PANEL_PASSWORD = "0282003";
-        const DATABASE_PASSWORD = "0282003";
         const BASE_URL = "https://matrix-tool-admin-default-rtdb.firebaseio.com";
 
         const Icons = {
@@ -131,10 +130,10 @@
             const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [] });
             const [isOnline, setIsOnline] = useState(true);
 
-            // Filters for Audit Log
+            // Audit Logs Filters
             const [searchUserAwb, setSearchUserAwb] = useState('');
             const [searchAccNo, setSearchAccNo] = useState('');
-            const [showApOnly, setShowApOnly] = useState(false); // New Filter for Auto-Pilot Only
+            const [showApOnly, setShowApOnly] = useState(false);
             const deferredUserAwb = useDeferredValue(searchUserAwb);
             const deferredAccNo = useDeferredValue(searchAccNo);
             const [logFrom, setLogFrom] = useState(todayStr);
@@ -311,7 +310,6 @@
                 entries.sort((a,b) => (b.ts||0) - (a.ts||0));
                 
                 return entries.filter(log => {
-                    // Auto-Pilot Filter Check
                     if(showApOnly && !log.isAutoPilot) return false;
 
                     if(qUserAwb) {
@@ -653,10 +651,11 @@
 
                                 {activeView === 'logs' && (
                                     <div className="space-y-4 sm:space-y-6">
+                                        {/* NEW RESPONSIVE FILTER GRID */}
                                         <div className="bg-white p-5 rounded-xl border border-borderLight shadow-card transition-all">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-5 items-end">
+                                            <div className="flex flex-col md:flex-row flex-wrap gap-4 items-end">
                                                 
-                                                <div className="lg:col-span-1">
+                                                <div className="w-full md:flex-1 min-w-[200px]">
                                                     <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">User / AWB Search</label>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 group-hover:text-accent transition-colors"><Icons.Search/></div>
@@ -664,7 +663,7 @@
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="lg:col-span-1">
+                                                <div className="w-full md:flex-1 min-w-[150px]">
                                                     <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Account No</label>
                                                     <div className="relative group">
                                                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 group-hover:text-accent transition-colors"><Icons.Server/></div>
@@ -672,19 +671,21 @@
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="lg:col-span-1">
-                                                    <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">From Date</label>
-                                                    <input type="date" value={logFrom} onChange={e=>setLogFrom(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg px-3 py-2 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors" />
-                                                </div>
-                                                
-                                                <div className="lg:col-span-1">
-                                                    <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">To Date</label>
-                                                    <input type="date" value={logTo} onChange={e=>setLogTo(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg px-3 py-2 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors" />
+                                                <div className="flex gap-4 w-full md:w-auto">
+                                                    <div className="w-1/2 md:w-[130px]">
+                                                        <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">From Date</label>
+                                                        <input type="date" value={logFrom} onChange={e=>setLogFrom(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg px-2 py-2 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors" />
+                                                    </div>
+                                                    
+                                                    <div className="w-1/2 md:w-[130px]">
+                                                        <label className="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">To Date</label>
+                                                        <input type="date" value={logTo} onChange={e=>setLogTo(e.target.value)} className="w-full bg-surface border border-borderLight rounded-lg px-2 py-2 text-xs sm:text-sm font-mono focus:border-accent focus:outline-none focus:bg-white transition-colors" />
+                                                    </div>
                                                 </div>
 
-                                                <div className="lg:col-span-2 flex gap-2">
-                                                    <button onClick={showAllLogs} className="flex-1 h-[38px] bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-lg transition-colors shadow-sm">Reset</button>
-                                                    <button onClick={()=>setShowApOnly(!showApOnly)} title="Show Auto-Pilot Data Only" className={`flex-1 h-[38px] flex items-center justify-center gap-1.5 font-bold text-xs rounded-lg transition-colors shadow-sm border ${showApOnly ? 'bg-purple-600 text-white border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'}`}>
+                                                <div className="flex gap-2 w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
+                                                    <button onClick={showAllLogs} className="flex-1 lg:w-auto px-4 h-[38px] bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-lg transition-colors shadow-sm">Reset</button>
+                                                    <button onClick={()=>setShowApOnly(!showApOnly)} title="Show Auto-Pilot Data Only" className={`flex-1 lg:w-auto px-4 h-[38px] flex items-center justify-center gap-1.5 font-bold text-xs rounded-lg transition-colors shadow-sm border ${showApOnly ? 'bg-purple-600 text-white border-purple-700' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'}`}>
                                                         <Icons.Robot /> {showApOnly ? 'Robot Only' : 'Filter Robot'}
                                                     </button>
                                                     <button onClick={exportAuditCSV} title="Download CSV" className="w-[45px] h-[38px] flex items-center justify-center bg-success hover:bg-emerald-700 text-white rounded-lg transition-all shadow-md transform hover:-translate-y-0.5"><Icons.Download/></button>
