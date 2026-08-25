@@ -127,7 +127,9 @@
             const [devices, setDevices] = useState({});
             const [logs, setLogs] = useState({});
             const [messages, setMessages] = useState({});
-            const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [] });
+            
+            // 🛑 تحديث حالة الـ Config لإضافة forceEditUsers 🛑
+            const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [], forceEditUsers: [] });
             const [isOnline, setIsOnline] = useState(true);
 
             // Audit Logs Filters
@@ -179,7 +181,8 @@
                             blockedDevices: configData.blockedDevices || [],
                             accDb: configData.accDb || {},
                             holidays: configData.holidays || [],
-                            autoPilotUsers: configData.autoPilotUsers || []
+                            autoPilotUsers: configData.autoPilotUsers || [],
+                            forceEditUsers: configData.forceEditUsers || [] // 🛑
                         });
                     }
                     setIsOnline(true);
@@ -232,7 +235,8 @@
                             blockedDevices: newConfig.blockedDevices,
                             accDb: parsedDb,
                             holidays: newConfig.holidays.map(d => d.replace(/\/+/g, '/').trim()).filter(Boolean),
-                            autoPilotUsers: newConfig.autoPilotUsers
+                            autoPilotUsers: newConfig.autoPilotUsers || [],
+                            forceEditUsers: newConfig.forceEditUsers || [] // 🛑
                         })
                     });
                     setSystemConfig(newConfig);
@@ -252,6 +256,14 @@
                 if(apUsers.includes(id)) apUsers = apUsers.filter(u => u !== id); else apUsers.push(id);
                 deployConfig({ autoPilotUsers: apUsers });
                 showToast(apUsers.includes(id) ? "Auto-Pilot Enabled for Agent" : "Auto-Pilot Disabled", "success");
+            };
+
+            // 🛑 التحكم في زر فتح الـ Delivered 🛑
+            const toggleForceEdit = (id) => {
+                let forceUsers = [...(systemConfig.forceEditUsers || [])];
+                if(forceUsers.includes(id)) forceUsers = forceUsers.filter(u => u !== id); else forceUsers.push(id);
+                deployConfig({ forceEditUsers: forceUsers });
+                showToast(forceUsers.includes(id) ? "Delivered Edit Enabled" : "Delivered Edit Disabled", "success");
             };
 
             const openChat = (id, name) => {
@@ -425,8 +437,9 @@
                 }
             };
 
+            // 🛑 حل مشكلة الباسورد (مقارنة بالباسورد الأساسي الصحيح) 🛑
             const handleUnlockDb = () => {
-                if(dbPass === DATABASE_PASSWORD) {
+                if(dbPass === ADMIN_PANEL_PASSWORD) {
                     setLocalAccDb(systemConfig.accDb || {});
                     setIsDbUnlocked(true); 
                     showToast("Vault Unlocked Successfully", "success");
@@ -578,6 +591,9 @@
                                             {activeDeviceList.map(dev => {
                                                 const isBlocked = systemConfig.blockedDevices.includes(dev.id);
                                                 const isAutoPilotAuth = (systemConfig.autoPilotUsers || []).includes(dev.id);
+                                                // 🛑 جلب حالة صلاحية فتح الـ Delivered 🛑
+                                                const isForceEditAuth = (systemConfig.forceEditUsers || []).includes(dev.id);
+                                                
                                                 const isO = (Date.now() - dev.lastSeen) < 15000;
                                                 
                                                 if(!isO && !isBlocked) return null;
@@ -585,7 +601,6 @@
                                                 const devChat = messages[dev.id]?.chat || [];
                                                 const hasUnread = devChat.length > 0 && devChat[devChat.length-1].from === 'user';
                                                 
-                                                // Monitor Live AP Activity
                                                 const isApActiveNow = dev.apActive;
                                                 const apStats = dev.apStats || {rem:0, succ:0, fail:0};
 
@@ -632,9 +647,16 @@
                                                                     <Icons.Chat /> {hasUnread ? 'New Reply!' : 'Chat'}
                                                                 </button>
                                                             </div>
-                                                            <button onClick={()=>toggleAutoPilot(dev.id)} className={`w-full py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-2 ${isAutoPilotAuth ? 'bg-purple-50 text-purple-700 border-purple-300 hover:bg-purple-100' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
-                                                                <Icons.Robot /> {isAutoPilotAuth ? 'Revoke Auto-Pilot' : 'Grant Auto-Pilot'}
-                                                            </button>
+                                                            
+                                                            {/* 🛑 تعديل الأزرار لتشمل زرار Delivered 🛑 */}
+                                                            <div className="flex gap-2 sm:gap-3">
+                                                                <button onClick={()=>toggleAutoPilot(dev.id)} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-1 ${isAutoPilotAuth ? 'bg-purple-50 text-purple-700 border-purple-300 hover:bg-purple-100' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
+                                                                    <Icons.Robot /> {isAutoPilotAuth ? 'Revoke AP' : 'Grant AP'}
+                                                                </button>
+                                                                <button onClick={()=>toggleForceEdit(dev.id)} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-1 ${isForceEditAuth ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
+                                                                    <Icons.Shield /> {isForceEditAuth ? 'Lock Delivered' : 'Unlock Delivered'}
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 );
@@ -651,7 +673,6 @@
 
                                 {activeView === 'logs' && (
                                     <div className="space-y-4 sm:space-y-6">
-                                        {/* NEW RESPONSIVE FILTER GRID */}
                                         <div className="bg-white p-5 rounded-xl border border-borderLight shadow-card transition-all">
                                             <div className="flex flex-col md:flex-row flex-wrap gap-4 items-end">
                                                 
