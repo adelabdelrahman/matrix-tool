@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Mat-Tool Admin V4</title>
+    <title>Mat-Tool Admin V9 - User Center</title>
 
     <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -71,6 +71,63 @@
         const ADMIN_PANEL_PASSWORD = "0282003";
         const BASE_URL = "https://matrix-tool-admin-default-rtdb.firebaseio.com";
 
+        // Existing Firebase permission arrays. These names are intentionally unchanged.
+        const USER_PERMISSION_FIELDS = [
+            'podUsers', 'wafaUsers', 'bankUsers', 'returnsUsers',
+            'addBillUsers', 'drsAlertUsers', 'autoPilotUsers', 'forceEditUsers', 'manifestUsers'
+        ];
+        const DATA_PERMISSION_FIELDS = ['podUsers', 'wafaUsers', 'bankUsers', 'returnsUsers'];
+
+        const PermissionSwitch = ({ label, description, checked, onChange, grantedCount = 0, totalCount = 1 }) => {
+            const partial = grantedCount > 0 && grantedCount < totalCount;
+            return (
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-3 py-3 hover:border-slate-300 transition-colors">
+                    <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-slate-800">{label}</span>
+                        {description && <span className="block text-[11px] text-slate-500 mt-0.5">{description}</span>}
+                        {partial && <span className="mt-1 inline-flex items-center gap-2 text-[10px] font-bold text-amber-700">Partial access · {grantedCount}/{totalCount} devices <button type="button" onClick={() => onChange(false)} className="underline decoration-dotted hover:text-red-700">Revoke all</button></span>}
+                    </span>
+                    <label className="relative inline-flex shrink-0 items-center cursor-pointer" title={partial ? 'Enable for all devices' : (checked ? 'Enabled on all devices' : 'Disabled on all devices')}>
+                        <input type="checkbox" className="peer sr-only" checked={!!checked} onChange={e => onChange(e.target.checked)} />
+                        <span className="h-6 w-11 rounded-full bg-slate-200 transition-colors peer-checked:bg-emerald-600"></span>
+                        <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                    </label>
+                </div>
+            );
+        };
+
+        // Group real Firebase device records by the registered username. Records without
+        // a username stay separate so unrelated/unknown devices are never merged.
+        const buildUserGroups = (deviceData, config = {}) => {
+            const blockedIds = new Set(Array.isArray(config.blockedDevices) ? config.blockedDevices : []);
+            const now = Date.now();
+            const buckets = new Map();
+            Object.entries(deviceData || {}).forEach(([id, record]) => {
+                if (!String(id || '').trim() || !record || typeof record !== 'object' || Array.isArray(record)) return;
+                const displayName = String(record.user || '').replace(/\s+/g, ' ').trim();
+                const normalizedName = displayName.toLocaleLowerCase();
+                const key = normalizedName ? `user:${normalizedName}` : `device:${id}`;
+                if (!buckets.has(key)) buckets.set(key, { key, user: displayName || 'No username recorded', devices: [] });
+                buckets.get(key).devices.push({ id: String(id), ...record });
+            });
+            return Array.from(buckets.values()).map(group => {
+                const sorted = [...group.devices].sort((a, b) => Number(b.lastSeen || 0) - Number(a.lastSeen || 0));
+                const onlineDevices = sorted.filter(d => Number(d.lastSeen || 0) > 0 && (now - Number(d.lastSeen || 0)) < 15000 && !blockedIds.has(d.id));
+                const blockedCount = group.devices.filter(d => blockedIds.has(d.id)).length;
+                return {
+                    ...group,
+                    deviceIds: group.devices.map(d => d.id),
+                    onlineDevices,
+                    onlineCount: onlineDevices.length,
+                    isOnline: onlineDevices.length > 0,
+                    blockedCount,
+                    someBlocked: blockedCount > 0,
+                    allBlocked: group.devices.length > 0 && blockedCount === group.devices.length,
+                    primaryDevice: onlineDevices[0] || sorted[0]
+                };
+            }).sort((a, b) => (Number(b.isOnline) - Number(a.isOnline)) || a.user.localeCompare(b.user));
+        };
+
         const Icons = {
             Shield: () => <svg className="w-6 h-6 sm:w-7 sm:h-7 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>,
             Activity: () => <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>,
@@ -129,7 +186,7 @@
             const [messages, setMessages] = useState({});
             
             // 🛑 تحديث حالة الـ Config لإضافة forceEditUsers 🛑
-            const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [], forceEditUsers: [], addBillUsers: [], drsAlertUsers: [], podUsers: [], wafaUsers: [], bankUsers: [], returnsUsers: [], modeAccessEnabled: false, modeAccessInitialized: false });
+            const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [], forceEditUsers: [], addBillUsers: [], drsAlertUsers: [], podUsers: [], wafaUsers: [], bankUsers: [], returnsUsers: [], manifestUsers: [], modeAccessEnabled: false, modeAccessInitialized: false });
             const [isOnline, setIsOnline] = useState(true);
 
             // Audit Logs Filters
@@ -156,6 +213,11 @@
 
             const [chatModal, setChatModal] = useState({ isOpen: false, targetId: '', targetName: '', text: '' });
             const chatBoxRef = useRef(null);
+            const [selectedPermissionUser, setSelectedPermissionUser] = useState('');
+            const [permissionSearch, setPermissionSearch] = useState('');
+            const [permissionDraft, setPermissionDraft] = useState({});
+            const [permissionDirty, setPermissionDirty] = useState(false);
+            const [permissionTouchedFields, setPermissionTouchedFields] = useState({});
 
             const showToast = (msg, type='success') => setToast({msg, type});
 
@@ -185,6 +247,7 @@
                             forceEditUsers: configData.forceEditUsers || [],
                             addBillUsers: configData.addBillUsers || [],
                             drsAlertUsers: configData.drsAlertUsers || [],
+                            manifestUsers: Array.isArray(configData.manifestUsers) ? configData.manifestUsers : [],
                             podUsers: configData.podUsers || [],
                             wafaUsers: configData.wafaUsers || [],
                             bankUsers: configData.bankUsers || [],
@@ -233,6 +296,7 @@
                 const newConfig = { ...systemConfig, ...partialConfig };
                 let parsedDb = newConfig.accDb;
 
+                let deployed = false;
                 try {
                     await fetch(BASE_URL + '/systemStatus.json', {
                         method: 'PATCH',
@@ -247,6 +311,7 @@
                             forceEditUsers: newConfig.forceEditUsers || [],
                             addBillUsers: newConfig.addBillUsers || [],
                             drsAlertUsers: newConfig.drsAlertUsers || [],
+                            manifestUsers: newConfig.manifestUsers || [],
                             podUsers: newConfig.podUsers || [],
                             wafaUsers: newConfig.wafaUsers || [],
                             bankUsers: newConfig.bankUsers || [],
@@ -257,8 +322,10 @@
                     });
                     setSystemConfig(newConfig);
                     showToast("System Configuration Deployed!", "success");
+                    deployed = true;
                 } catch(e) { showToast("Deployment failed", "error"); }
                 setIsLoading(false);
+                return deployed;
             };
 
             const toggleDeviceBlock = (id) => {
@@ -297,7 +364,7 @@
                 const granting = !users.includes(id);
                 users = granting ? [...users, id] : users.filter(u => u !== id);
                 deployConfig({ drsAlertUsers: users });
-                showToast(granting ? "DRS Status access granted" : "DRS Status access revoked", "success");
+                showToast(granting ? "DRS Alert access granted" : "DRS Alert access revoked", "success");
             };
 
             const MODE_ACCESS_FIELDS = ['podUsers', 'wafaUsers', 'bankUsers', 'returnsUsers'];
@@ -349,6 +416,149 @@
                 deployConfig(partial);
                 showToast(`${labels[field]} access ${granting ? 'granted' : 'revoked'}${systemConfig.modeAccessEnabled ? '' : ' · mode enforcement enabled'}`, 'success');
             };
+
+            const getPermissionDraft = (deviceIds, config = systemConfig) => {
+                const ids = Array.isArray(deviceIds) ? deviceIds : [deviceIds];
+                const draft = {};
+                USER_PERMISSION_FIELDS.forEach(field => {
+                    const grants = Array.isArray(config[field]) ? config[field] : [];
+                    draft[field] = ids.length > 0 && ids.every(id => grants.includes(id));
+                });
+                return draft;
+            };
+
+            const getPermissionGrantCount = (field, deviceIds) => {
+                const ids = Array.isArray(deviceIds) ? deviceIds : [];
+                const grants = Array.isArray(systemConfig[field]) ? systemConfig[field] : [];
+                return ids.filter(id => grants.includes(id)).length;
+            };
+
+            const selectPermissionUser = (groupKey) => {
+                const group = buildUserGroups(devices, systemConfig).find(item => item.key === groupKey);
+                if (!group || groupKey === selectedPermissionUser) return;
+                if (permissionDirty && !window.confirm('Discard unsaved permission changes for the current user?')) return;
+                setSelectedPermissionUser(group.key);
+                setPermissionDraft(getPermissionDraft(group.deviceIds));
+                setPermissionTouchedFields({});
+                setPermissionDirty(false);
+            };
+
+            const openUserManager = (group) => {
+                if (!group || !group.deviceIds || !group.deviceIds.length) return;
+                if (permissionDirty && !window.confirm('Discard unsaved permission changes for the current user?')) return;
+                setSelectedPermissionUser(group.key);
+                setPermissionDraft(getPermissionDraft(group.deviceIds));
+                setPermissionTouchedFields({});
+                setPermissionDirty(false);
+                setActiveView('permissions');
+            };
+
+            const updatePermissionDraft = (field, enabled) => {
+                if (!USER_PERMISSION_FIELDS.includes(field)) return;
+                setPermissionDraft(prev => ({ ...prev, [field]: !!enabled }));
+                setPermissionTouchedFields(prev => ({ ...prev, [field]: true }));
+                setPermissionDirty(true);
+            };
+
+            const saveSelectedPermissions = async () => {
+                const group = buildUserGroups(devices, systemConfig).find(item => item.key === selectedPermissionUser);
+                const ids = group ? group.deviceIds : [];
+                if (!ids.length || ids.some(id => !Object.prototype.hasOwnProperty.call(devices || {}, id))) {
+                    showToast('Select a registered user before saving permissions.', 'error');
+                    return;
+                }
+
+                const partial = {};
+                const dataTouched = DATA_PERMISSION_FIELDS.some(field => !!permissionTouchedFields[field]);
+
+                // Keep the original first-use safety behavior. Existing device grants are
+                // seeded only when a DATA permission is explicitly edited for the first time.
+                if (dataTouched) {
+                    const safeSeed = systemConfig.modeAccessInitialized ? {} : buildSafeModeInitialization();
+                    DATA_PERMISSION_FIELDS.forEach(field => {
+                        const current = Array.isArray(systemConfig[field]) ? [...systemConfig[field]] : [];
+                        const hasSafeSeed = Array.isArray(safeSeed[field]);
+                        const next = hasSafeSeed ? [...safeSeed[field]] : current;
+                        if (permissionTouchedFields[field]) {
+                            ids.forEach(id => {
+                                const exists = next.includes(id);
+                                if (permissionDraft[field] && !exists) next.push(id);
+                                if (!permissionDraft[field] && exists) {
+                                    for (let i = next.length - 1; i >= 0; i--) if (next[i] === id) next.splice(i, 1);
+                                }
+                            });
+                            partial[field] = next;
+                        } else if (hasSafeSeed) {
+                            partial[field] = next;
+                        }
+                    });
+                    partial.modeAccessInitialized = true;
+                    if (systemConfig.modeAccessEnabled !== true) partial.modeAccessEnabled = true;
+                }
+
+                ['addBillUsers', 'drsAlertUsers', 'autoPilotUsers', 'forceEditUsers', 'manifestUsers'].forEach(field => {
+                    if (!permissionTouchedFields[field]) return;
+                    const next = Array.isArray(systemConfig[field]) ? [...systemConfig[field]] : [];
+                    ids.forEach(id => {
+                        const exists = next.includes(id);
+                        if (permissionDraft[field] && !exists) next.push(id);
+                        if (!permissionDraft[field] && exists) {
+                            for (let i = next.length - 1; i >= 0; i--) if (next[i] === id) next.splice(i, 1);
+                        }
+                    });
+                    partial[field] = next;
+                });
+
+                if (Object.keys(partial).length === 0) {
+                    setPermissionDirty(false);
+                    setPermissionTouchedFields({});
+                    showToast('No permission changes to save.', 'success');
+                    return;
+                }
+
+                const deployed = await deployConfig(partial);
+                if (deployed) {
+                    const updatedConfig = { ...systemConfig, ...partial };
+                    setPermissionDraft(getPermissionDraft(ids, updatedConfig));
+                    setPermissionTouchedFields({});
+                    setPermissionDirty(false);
+                }
+            };
+
+            useEffect(() => {
+                if (activeView !== 'permissions' || selectedPermissionUser) return;
+                const firstGroup = buildUserGroups(devices, systemConfig)[0];
+                if (!firstGroup) return;
+                setSelectedPermissionUser(firstGroup.key);
+                setPermissionDraft(getPermissionDraft(firstGroup.deviceIds));
+                setPermissionTouchedFields({});
+                setPermissionDirty(false);
+            }, [activeView, devices, selectedPermissionUser, systemConfig]);
+
+            const toggleUserBlock = (deviceIds) => {
+                const ids = Array.isArray(deviceIds) ? deviceIds : [];
+                if (!ids.length) return;
+                const current = Array.isArray(systemConfig.blockedDevices) ? [...systemConfig.blockedDevices] : [];
+                const allBlocked = ids.every(id => current.includes(id));
+                let next = current;
+                ids.forEach(id => {
+                    const exists = next.includes(id);
+                    if (allBlocked && exists) next = next.filter(value => value !== id);
+                    if (!allBlocked && !exists) next = [...next, id];
+                });
+                deployConfig({ blockedDevices: next });
+                showToast(allBlocked ? 'User unblocked on all registered devices' : 'User blocked on all registered devices', 'success');
+            };
+
+            useEffect(() => {
+                if (activeView !== 'permissions' || !selectedPermissionUser) return;
+                const exists = buildUserGroups(devices, systemConfig).some(group => group.key === selectedPermissionUser);
+                if (!exists && !permissionDirty) {
+                    setSelectedPermissionUser('');
+                    setPermissionDraft({});
+                    setPermissionTouchedFields({});
+                }
+            }, [activeView, devices, selectedPermissionUser, permissionDirty, systemConfig]);
 
             const openChat = (id, name) => {
                 setChatModal({ isOpen: true, targetId: id, targetName: name, text: '' });
@@ -562,8 +772,12 @@
                 );
             }
 
-            const activeDeviceList = Object.entries(devices).map(([id, d]) => ({id, ...d}));
+            const activeDeviceList = Object.entries(devices || {}).filter(([id, d]) => !!String(id || '').trim() && d && typeof d === 'object' && !Array.isArray(d)).map(([id, d]) => ({id, ...d}));
             const onlineDevices = activeDeviceList.filter(d => (Date.now() - d.lastSeen) < 15000 && !systemConfig.blockedDevices.includes(d.id));
+            const permissionUserGroups = buildUserGroups(devices, systemConfig);
+            const visibleUserGroups = permissionUserGroups.filter(group => group.isOnline || group.someBlocked);
+            const onlineUserCount = permissionUserGroups.filter(group => group.isOnline).length;
+            const selectedPermissionGroup = permissionUserGroups.find(group => group.key === selectedPermissionUser) || null;
             
             const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
             const totalClosedTodayOnly = activeDeviceList
@@ -574,6 +788,7 @@
 
             const ViewMenu = [
                 { id: 'monitoring', label: 'Live Monitoring', icon: Icons.Activity },
+                { id: 'permissions', label: 'User Permissions', icon: Icons.Shield },
                 { id: 'logs', label: 'Master Audit Logs', icon: Icons.Table },
                 { id: 'security', label: 'Security Settings', icon: Icons.Settings },
                 { id: 'database', label: 'Accounts Database', icon: Icons.Server },
@@ -657,7 +872,7 @@
                                             <div className="bg-white p-4 sm:p-6 rounded-xl border border-borderLight shadow-card flex items-center justify-between hover:border-slate-300 transition-colors">
                                                 <div>
                                                     <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Users Online</p>
-                                                    <p className="text-3xl sm:text-4xl font-extrabold text-brand mono">{onlineDevices.length}</p>
+                                                    <p className="text-3xl sm:text-4xl font-extrabold text-brand mono">{onlineUserCount}</p>
                                                 </div>
                                                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-50 flex items-center justify-center text-accent"><Icons.Activity/></div>
                                             </div>
@@ -670,59 +885,59 @@
                                             </div>
                                         </div>
 
-                                        <h3 className="text-base sm:text-lg font-bold text-brand mt-2 sm:mt-4">Active Sessions</h3>
+                                        <div className="flex flex-wrap items-center justify-between gap-2 mt-2 sm:mt-4">
+                                            <h3 className="text-base sm:text-lg font-bold text-brand">Users</h3>
+                                            <span className="text-[11px] text-slate-500">One card per registered username</span>
+                                        </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                            {activeDeviceList.map(dev => {
-                                                const isBlocked = systemConfig.blockedDevices.includes(dev.id);
-                                                const isAutoPilotAuth = (systemConfig.autoPilotUsers || []).includes(dev.id);
-                                                // 🛑 جلب حالة صلاحية فتح الـ Delivered 🛑
-                                                const isForceEditAuth = (systemConfig.forceEditUsers || []).includes(dev.id);
-                                                const isAddBillAuth = (systemConfig.addBillUsers || []).includes(dev.id);
-                                                const isDrsAlertAuth = (systemConfig.drsAlertUsers || []).includes(dev.id);
-                                                const isPodAuth = (systemConfig.podUsers || []).includes(dev.id);
-                                                const isWafaAuth = (systemConfig.wafaUsers || []).includes(dev.id);
-                                                const isBankAuth = (systemConfig.bankUsers || []).includes(dev.id);
-                                                const isReturnsAuth = (systemConfig.returnsUsers || []).includes(dev.id);
-                                                const modePermissionButtons = [
-                                                    { key: 'podUsers', label: 'POD', enabled: isPodAuth },
-                                                    { key: 'wafaUsers', label: 'Wafa', enabled: isWafaAuth },
-                                                    { key: 'bankUsers', label: 'Bank', enabled: isBankAuth },
-                                                    { key: 'returnsUsers', label: 'Returns', enabled: isReturnsAuth }
-                                                ];
-                                                
-                                                const isO = (Date.now() - dev.lastSeen) < 15000;
-                                                
-                                                if(!isO && !isBlocked) return null;
-
-                                                const devChat = messages[dev.id]?.chat || [];
+                                            {visibleUserGroups.map(group => {
+                                                const dev = group.primaryDevice;
+                                                if (!dev) return null;
+                                                const isBlocked = group.allBlocked;
+                                                const isPartiallyBlocked = group.someBlocked && !group.allBlocked;
+                                                const isO = group.isOnline;
+                                                const groupHas = field => group.deviceIds.some(id => Array.isArray(systemConfig[field]) && systemConfig[field].includes(id));
+                                                const groupCount = field => group.deviceIds.filter(id => Array.isArray(systemConfig[field]) && systemConfig[field].includes(id)).length;
+                                                const isAutoPilotAuth = groupHas('autoPilotUsers');
+                                                const isForceEditAuth = groupHas('forceEditUsers');
+                                                const isAddBillAuth = groupHas('addBillUsers');
+                                                const isDrsAlertAuth = groupHas('drsAlertUsers');
+                                                const isPodAuth = groupHas('podUsers');
+                                                const isWafaAuth = groupHas('wafaUsers');
+                                                const isBankAuth = groupHas('bankUsers');
+                                                const isReturnsAuth = groupHas('returnsUsers');
+                                                const chatDevice = group.onlineDevices[0] || dev;
+                                                const devChat = messages[chatDevice.id]?.chat || [];
                                                 const hasUnread = devChat.length > 0 && devChat[devChat.length-1].from === 'user';
-                                                
-                                                const isApActiveNow = dev.apActive;
-                                                const apStats = dev.apStats || {rem:0, succ:0, fail:0};
+                                                const apDevice = group.devices.find(d => d.apActive) || dev;
+                                                const isApActiveNow = !!apDevice.apActive;
+                                                const apStats = apDevice.apStats || {rem:0, succ:0, fail:0};
 
                                                 return (
-                                                    <div key={dev.id} className={`bg-white rounded-xl border p-4 sm:p-5 transition-all shadow-card hover:-translate-y-1 hover:shadow-floating ${isBlocked ? 'border-red-200 bg-red-50/30' : 'border-borderLight hover:border-accent/40'}`}>
-                                                        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 pb-4 sm:pb-5 border-b border-slate-100">
+                                                    <div key={group.key} className={`bg-white rounded-xl border p-4 sm:p-5 transition-all shadow-card hover:-translate-y-1 hover:shadow-floating ${isBlocked ? 'border-red-200 bg-red-50/30' : 'border-borderLight hover:border-accent/40'}`}>
+                                                        <div className="flex items-center gap-3 sm:gap-4 mb-4 pb-4 border-b border-slate-100">
                                                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-50 border border-borderLight flex items-center justify-center text-slate-600 font-bold text-base sm:text-lg shrink-0 shadow-inner-light relative">
-                                                                {(dev.user||'U').charAt(0).toUpperCase()}
+                                                                {(group.user || 'U').charAt(0).toUpperCase()}
                                                                 {isAutoPilotAuth && <div className="absolute -bottom-1 -right-1 bg-purple-500 text-white rounded-full p-1 shadow-sm"><Icons.Robot/></div>}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="font-bold text-brand flex items-center gap-2 truncate text-sm sm:text-base">
-                                                                    {dev.user||'Unknown Agent'}
-                                                                    {isO && !isBlocked && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-success shrink-0 shadow-[0_0_0_2px_#ecfdf5] pulse-indicator"></span>}
+                                                                    {group.user}
+                                                                    {isO && <span className="w-2 h-2 rounded-full bg-success shrink-0 shadow-[0_0_0_2px_#ecfdf5] pulse-indicator"></span>}
                                                                 </div>
-                                                                <div className="text-[10px] sm:text-xs font-mono text-slate-400 truncate mt-0.5">{dev.id}</div>
+                                                                <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5">{group.devices.length} registered device{group.devices.length === 1 ? '' : 's'} · {group.onlineCount} online</div>
+                                                                {isPartiallyBlocked && <div className="mt-1 text-[9px] font-bold text-amber-700">Some devices are blocked</div>}
+                                                                {isBlocked && <div className="mt-1 text-[9px] font-bold text-red-600">All devices blocked</div>}
                                                             </div>
                                                         </div>
-                                                        <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-6 bg-slate-50/50 p-3 sm:p-4 rounded-lg border border-slate-100">
+                                                        <div className="space-y-2 sm:space-y-3 mb-4 bg-slate-50/50 p-3 sm:p-4 rounded-lg border border-slate-100">
                                                             <div className="flex justify-between items-center text-xs sm:text-sm"><span className="text-slate-500 font-medium">Current Task</span><span className="font-mono font-bold bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm text-slate-700">{dev.currentMode||'Idle'}</span></div>
                                                             <div className="flex justify-between items-center text-xs sm:text-sm"><span className="text-slate-500 font-medium">Active AWB</span><span className="font-mono font-bold text-accent">{dev.lastAwb||'-'}</span></div>
                                                             <div className="flex justify-between items-center text-xs sm:text-sm pt-2 sm:pt-3 border-t border-slate-100"><span className="text-slate-500 font-medium">Daily Output</span><span className="font-mono font-extrabold text-success text-base sm:text-lg">{dev.count||0}</span></div>
                                                         </div>
-                                                        
+
                                                         {isApActiveNow && (
-                                                            <div className="mb-5 bg-purple-50 border border-purple-200 p-3 rounded-lg fade-in">
+                                                            <div className="mb-4 bg-purple-50 border border-purple-200 p-3 rounded-lg fade-in">
                                                                 <div className="flex justify-between items-center mb-2">
                                                                     <span className="text-xs font-bold text-purple-700 flex items-center gap-1.5"><span className="pulse-indicator">🤖</span> Auto-Pilot Running</span>
                                                                     <span className="text-xs font-mono font-bold text-purple-700">{apStats.rem} Left</span>
@@ -735,56 +950,172 @@
                                                         )}
 
                                                         <div className="flex flex-col gap-2">
-                                                            <div className="flex gap-2 sm:gap-3">
-                                                                <button onClick={()=>toggleDeviceBlock(dev.id)} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm ${isBlocked ? 'bg-white text-success border-green-200 hover:bg-green-50' : 'bg-white text-danger border-red-200 hover:bg-red-50'}`}>
-                                                                    {isBlocked ? 'Unblock' : 'Block User'}
+                                                            <div className="flex gap-2">
+                                                                <button onClick={()=>toggleUserBlock(group.deviceIds)} className={`flex-1 py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm ${isBlocked ? 'bg-white text-success border-green-200 hover:bg-green-50' : 'bg-white text-danger border-red-200 hover:bg-red-50'}`}>
+                                                                    {isBlocked ? 'Unblock User' : 'Block User'}
                                                                 </button>
-                                                                <button onClick={()=>openChat(dev.id, dev.user||'Agent')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-1.5 sm:gap-2 ${hasUnread ? 'bg-accent text-white border-accent hover:bg-accentHover pulse-indicator' : 'bg-white text-accent border-blue-200 hover:bg-blue-50'}`}>
+                                                                <button onClick={()=>openChat(chatDevice.id, group.user || 'Agent')} className={`flex-1 py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-1.5 ${hasUnread ? 'bg-accent text-white border-accent hover:bg-accentHover pulse-indicator' : 'bg-white text-accent border-blue-200 hover:bg-blue-50'}`}>
                                                                     <Icons.Chat /> {hasUnread ? 'New Reply!' : 'Chat'}
                                                                 </button>
                                                             </div>
-                                                            
-                                                            {/* 🛑 تعديل الأزرار لتشمل زرار Delivered 🛑 */}
-                                                            <div className="flex gap-2 sm:gap-3">
-                                                                <button onClick={()=>toggleAutoPilot(dev.id)} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-1 ${isAutoPilotAuth ? 'bg-purple-50 text-purple-700 border-purple-300 hover:bg-purple-100' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
-                                                                    <Icons.Robot /> {isAutoPilotAuth ? 'Revoke AP' : 'Grant AP'}
-                                                                </button>
-                                                                <button onClick={()=>toggleForceEdit(dev.id)} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-1 ${isForceEditAuth ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
-                                                                    <Icons.Shield /> {isForceEditAuth ? 'Lock Delivered' : 'Unlock Delivered'}
-                                                                </button>
-                                                            </div>
-                                                            <div className="mt-1 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                                                <div className="flex items-center justify-between gap-2 mb-2">
-                                                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Mode Access</span>
-                                                                    <span className={`text-[9px] rounded-full px-2 py-1 border ${systemConfig.modeAccessEnabled ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{systemConfig.modeAccessEnabled ? 'ENFORCED' : 'SETUP'}</span>
-                                                                </div>
-                                                                <div className="grid grid-cols-2 gap-2">
-                                                                    {modePermissionButtons.map(mode => (
-                                                                        <button key={mode.key} onClick={()=>toggleModeAccess(mode.key, dev.id)} className={`py-2 px-2 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all border ${mode.enabled ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'}`} title={`${mode.enabled ? 'Revoke' : 'Grant'} ${mode.label} access`}>
-                                                                            <span className="block">{mode.enabled ? '✓ ' : '+ '}{mode.label}</span>
-                                                                            <span className="block text-[9px] opacity-70">{mode.enabled ? 'Granted' : 'Not granted'}</span>
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                                <button onClick={()=>toggleAddBill(dev.id)} className={`w-full mt-2 py-2.5 rounded-lg text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-2 ${isAddBillAuth ? 'bg-indigo-50 text-indigo-700 border-indigo-300 hover:bg-indigo-100' : 'bg-white text-slate-600 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`} title="Independently grant or revoke Add Bill UI access">
-                                                                    <span className="text-base leading-none">▤</span> {isAddBillAuth ? 'Revoke Add Bill Access' : 'Grant Add Bill Access'}
-                                                                    <span className={`ml-auto text-[9px] px-2 py-0.5 rounded-full ${isAddBillAuth ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>{isAddBillAuth ? 'ENABLED' : 'DISABLED'}</span>
-                                                                </button>
-                                                                <button onClick={()=>toggleDrsAlert(dev.id)} className={`w-full mt-2 py-2.5 rounded-lg text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-2 ${isDrsAlertAuth ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' : 'bg-white text-slate-600 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700'}`} title="Independently grant or revoke DRS Shipment Alert access">
-                                                                    <span className="text-base leading-none">▣</span> {isDrsAlertAuth ? 'Revoke DRS Status Access' : 'Grant DRS Status Access'}
-                                                                    <span className={`ml-auto text-[9px] px-2 py-0.5 rounded-full ${isDrsAlertAuth ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{isDrsAlertAuth ? 'ENABLED' : 'DISABLED'}</span>
-                                                                </button>
+                                                            <button onClick={()=>openUserManager(group)} className="w-full py-2.5 rounded-lg text-xs font-bold transition-all border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center justify-center gap-2">
+                                                                <Icons.Shield/> Manage User · All Devices
+                                                            </button>
+                                                            <div className="flex flex-wrap gap-1.5 pt-1">
+                                                                {isPodAuth && <span title={`POD: ${groupCount('podUsers')}/${group.devices.length} devices`} className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[9px] font-bold text-blue-700">POD</span>}
+                                                                {isWafaAuth && <span title={`Wafa: ${groupCount('wafaUsers')}/${group.devices.length} devices`} className="rounded-md border border-violet-100 bg-violet-50 px-2 py-1 text-[9px] font-bold text-violet-700">Wafa</span>}
+                                                                {isBankAuth && <span title={`Bank: ${groupCount('bankUsers')}/${group.devices.length} devices`} className="rounded-md border border-amber-100 bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-700">Bank</span>}
+                                                                {isReturnsAuth && <span title={`Returns: ${groupCount('returnsUsers')}/${group.devices.length} devices`} className="rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700">Returns</span>}
+                                                                {isAddBillAuth && <span title={`Add AWB: ${groupCount('addBillUsers')}/${group.devices.length} devices`} className="rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1 text-[9px] font-bold text-indigo-700">Add AWB</span>}
+                                                                {isDrsAlertAuth && <span title={`DRS: ${groupCount('drsAlertUsers')}/${group.devices.length} devices`} className="rounded-md border border-teal-100 bg-teal-50 px-2 py-1 text-[9px] font-bold text-teal-700">DRS</span>}
+                                                                {isAutoPilotAuth && <span title={`Auto-Pilot: ${groupCount('autoPilotUsers')}/${group.devices.length} devices`} className="rounded-md border border-purple-100 bg-purple-50 px-2 py-1 text-[9px] font-bold text-purple-700">Auto-Pilot</span>}
+                                                                {isForceEditAuth && <span title={`Delivered Edit: ${groupCount('forceEditUsers')}/${group.devices.length} devices`} className="rounded-md border border-orange-100 bg-orange-50 px-2 py-1 text-[9px] font-bold text-orange-700">Delivered Edit</span>}
+                                                                {!isPodAuth && !isWafaAuth && !isBankAuth && !isReturnsAuth && !isAddBillAuth && !isDrsAlertAuth && !isAutoPilotAuth && !isForceEditAuth && <span className="text-[10px] text-slate-400">No individual permissions granted</span>}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 );
                                             })}
-                                            {onlineDevices.length === 0 && systemConfig.blockedDevices.length === 0 && (
+                                            {visibleUserGroups.length === 0 && (
                                                 <div className="col-span-full py-12 sm:py-16 flex flex-col items-center justify-center text-slate-400 bg-white rounded-xl border border-dashed border-borderLight shadow-sm">
                                                     <div className="mb-4 opacity-50"><Icons.Activity /></div>
-                                                    <div className="font-semibold text-xs sm:text-sm">No agents are currently active in the system.</div>
+                                                    <div className="font-semibold text-xs sm:text-sm">No users are currently online or blocked.</div>
                                                 </div>
                                             )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeView === 'permissions' && (
+                                    <div className="fade-in">
+                                        <div className="mb-5">
+                                            <h3 className="text-lg font-extrabold text-brand">User Permissions</h3>
+                                            <p className="mt-1 text-xs text-slate-500">Each username appears once. Changes apply to every registered device under that username.</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-4 items-start">
+                                            <section className="rounded-xl border border-borderLight bg-white overflow-hidden">
+                                                <div className="border-b border-slate-100 p-3">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="text-sm font-bold text-brand">Registered Users</div>
+                                                        <span className="text-[10px] text-slate-400">{permissionUserGroups.length} users</span>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <div className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none"><Icons.Search/></div>
+                                                        <input value={permissionSearch} onChange={e=>setPermissionSearch(e.target.value)} placeholder="Search user or PC ID" className="w-full rounded-lg border border-borderLight bg-surface pl-10 pr-3 py-2.5 text-xs outline-none focus:border-accent focus:bg-white" />
+                                                    </div>
+                                                </div>
+                                                <div className="max-h-[70vh] overflow-y-auto divide-y divide-slate-100">
+                                                    {permissionUserGroups
+                                                        .filter(group => `${group.user} ${group.deviceIds.join(' ')}`.toLowerCase().includes(permissionSearch.trim().toLowerCase()))
+                                                        .map(group => {
+                                                            const selected = selectedPermissionUser === group.key;
+                                                            return (
+                                                                <button key={group.key} onClick={() => selectPermissionUser(group.key)} className={`w-full px-3 py-3 text-left transition-colors ${selected ? 'bg-blue-50 border-l-2 border-l-accent' : 'hover:bg-slate-50 border-l-2 border-l-transparent'}`}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`h-2 w-2 rounded-full shrink-0 ${group.allBlocked ? 'bg-red-500' : group.isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                                                                        <span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-800">{group.user}</span>
+                                                                        {group.allBlocked && <span className="text-[9px] font-bold text-red-600">BLOCKED</span>}
+                                                                        {group.someBlocked && !group.allBlocked && <span className="text-[9px] font-bold text-amber-700">PARTIAL</span>}
+                                                                    </div>
+                                                                    <div className="mt-1 pl-4 text-[10px] text-slate-500">{group.deviceIds.length} registered device{group.deviceIds.length === 1 ? '' : 's'}</div>
+                                                                    <div className="mt-1 pl-4 text-[9px] font-semibold text-slate-400">{group.allBlocked ? 'Blocked' : group.isOnline ? `${group.onlineCount} online` : 'Offline'}</div>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    {permissionUserGroups.filter(group => `${group.user} ${group.deviceIds.join(' ')}`.toLowerCase().includes(permissionSearch.trim().toLowerCase())).length === 0 && (
+                                                        <div className="px-4 py-8 text-center text-xs text-slate-400">
+                                                            {permissionUserGroups.length === 0 ? 'No registered devices were returned from Firebase activeDevices.json.' : 'No users match this search.'}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </section>
+
+                                            <section className="min-w-0 rounded-xl border border-borderLight bg-white overflow-hidden">
+                                                {selectedPermissionGroup ? (
+                                                    <>
+                                                        <div className="border-b border-slate-100 px-4 py-4">
+                                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                <div className="min-w-0">
+                                                                    <div className="text-base font-extrabold text-brand truncate">{selectedPermissionGroup.user}</div>
+                                                                    <div className="mt-1 text-[10px] text-slate-500">{selectedPermissionGroup.deviceIds.length} registered device{selectedPermissionGroup.deviceIds.length === 1 ? '' : 's'} · {selectedPermissionGroup.onlineCount} online</div>
+                                                                </div>
+                                                                <div className="text-[10px] font-semibold text-slate-400">Changes apply to all devices for this username</div>
+                                                            </div>
+                                                            <details className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
+                                                                <summary className="cursor-pointer text-[10px] font-bold text-slate-500">Show linked PC IDs ({selectedPermissionGroup.deviceIds.length})</summary>
+                                                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                                                    {selectedPermissionGroup.deviceIds.map(id => <span key={id} className="rounded bg-white border border-slate-200 px-2 py-1 text-[10px] font-mono text-slate-500">{id}</span>)}
+                                                                </div>
+                                                            </details>
+                                                        </div>
+
+                                                        <div className="p-3 sm:p-4 space-y-3">
+                                                            <details open className="group rounded-lg border border-slate-200 overflow-hidden">
+                                                                <summary className="flex cursor-pointer list-none items-center justify-between bg-slate-50 px-3 py-3 text-xs font-extrabold text-slate-700">
+                                                                    <span>DATA</span><span className="text-[10px] font-medium text-slate-400 group-open:hidden">Show</span><span className="hidden text-[10px] font-medium text-slate-400 group-open:inline">Hide</span>
+                                                                </summary>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
+                                                                    <PermissionSwitch label="POD" description="Proof of Delivery" checked={permissionDraft.podUsers} grantedCount={getPermissionGrantCount('podUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('podUsers',v)} />
+                                                                    <PermissionSwitch label="Wafa" checked={permissionDraft.wafaUsers} grantedCount={getPermissionGrantCount('wafaUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('wafaUsers',v)} />
+                                                                    <PermissionSwitch label="Bank" checked={permissionDraft.bankUsers} grantedCount={getPermissionGrantCount('bankUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('bankUsers',v)} />
+                                                                    <PermissionSwitch label="Returns" checked={permissionDraft.returnsUsers} grantedCount={getPermissionGrantCount('returnsUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('returnsUsers',v)} />
+                                                                </div>
+                                                            </details>
+
+                                                            <details className="group rounded-lg border border-slate-200 overflow-hidden">
+                                                                <summary className="flex cursor-pointer list-none items-center justify-between bg-slate-50 px-3 py-3 text-xs font-extrabold text-slate-700">
+                                                                    <span>ADD AWB</span><span className="text-[10px] font-medium text-slate-400 group-open:hidden">Show</span><span className="hidden text-[10px] font-medium text-slate-400 group-open:inline">Hide</span>
+                                                                </summary>
+                                                                <div className="p-3">
+                                                                    <PermissionSwitch label="Add AWB Access" description="Allows this user to use the Add AWB interface" checked={permissionDraft.addBillUsers} grantedCount={getPermissionGrantCount('addBillUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('addBillUsers',v)} />
+                                                                </div>
+                                                            </details>
+
+                                                            <details className="group rounded-lg border border-slate-200 overflow-hidden">
+                                                                <summary className="flex cursor-pointer list-none items-center justify-between bg-slate-50 px-3 py-3 text-xs font-extrabold text-slate-700">
+                                                                    <span>DRS</span><span className="text-[10px] font-medium text-slate-400 group-open:hidden">Show</span><span className="hidden text-[10px] font-medium text-slate-400 group-open:inline">Hide</span>
+                                                                </summary>
+                                                                <div className="p-3">
+                                                                    <PermissionSwitch label="DRS Status Access" description="Allows this user to use DRS Shipment Alert" checked={permissionDraft.drsAlertUsers} grantedCount={getPermissionGrantCount('drsAlertUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('drsAlertUsers',v)} />
+                                                                </div>
+                                                            </details>
+
+                                                            <details className="group rounded-lg border border-slate-200 overflow-hidden">
+                                                                <summary className="flex cursor-pointer list-none items-center justify-between bg-slate-50 px-3 py-3 text-xs font-extrabold text-slate-700">
+                                                                    <span>ADVANCED</span><span className="text-[10px] font-medium text-slate-400 group-open:hidden">Show</span><span className="hidden text-[10px] font-medium text-slate-400 group-open:inline">Hide</span>
+                                                                </summary>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
+                                                                    <PermissionSwitch label="Auto-Pilot" description="Enable Auto-Pilot for this user" checked={permissionDraft.autoPilotUsers} grantedCount={getPermissionGrantCount('autoPilotUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('autoPilotUsers',v)} />
+                                                                    <PermissionSwitch label="Delivered Edit" description="Allow Delivered status editing" checked={permissionDraft.forceEditUsers} grantedCount={getPermissionGrantCount('forceEditUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('forceEditUsers',v)} />
+                                                                </div>
+                                                            </details>
+
+                                                            <details open className="group rounded-lg border border-violet-200 overflow-hidden">
+                                                                <summary className="flex cursor-pointer list-none items-center justify-between bg-violet-50 px-3 py-3 text-xs font-extrabold text-slate-700">
+                                                                    <span>MANIFEST</span><span className="text-[10px] font-medium text-violet-500 group-open:hidden">Show</span><span className="hidden text-[10px] font-medium text-violet-500 group-open:inline">Hide</span>
+                                                                </summary>
+                                                                <div className="p-3">
+                                                                    <PermissionSwitch label="Smart Manifest Finder" description="Allow or revoke this user's access to the MANIFEST tool in MAT-TOOL" checked={permissionDraft.manifestUsers} grantedCount={getPermissionGrantCount('manifestUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('manifestUsers',v)} />
+                                                                    <p className="mt-2 text-[10px] leading-relaxed text-slate-500">Applies to all registered PC IDs linked to this username. The tool checks this permission before opening and refreshes it periodically.</p>
+                                                                </div>
+                                                            </details>
+                                                        </div>
+
+                                                        <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-white px-4 py-3">
+                                                            <span className={`text-[11px] font-semibold ${permissionDirty ? 'text-amber-700' : 'text-slate-400'}`}>{permissionDirty ? 'Unsaved changes' : 'All changes saved'}</span>
+                                                            <button onClick={saveSelectedPermissions} disabled={!permissionDirty || isLoading} className={`rounded-lg px-5 py-2.5 text-xs font-bold transition-colors ${permissionDirty && !isLoading ? 'bg-brand text-white hover:bg-brandHover' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
+                                                                {isLoading ? 'Saving...' : 'Save Permissions'}
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex min-h-[360px] flex-col items-center justify-center px-6 text-center">
+                                                        <div className="text-sm font-bold text-slate-600">No user selected</div>
+                                                        <p className="mt-2 max-w-sm text-xs text-slate-400">Select a real username from the Firebase activeDevices list. Each user appears once; linked PC IDs are grouped underneath.</p>
+                                                    </div>
+                                                )}
+                                            </section>
                                         </div>
                                     </div>
                                 )}
@@ -907,96 +1238,51 @@
 
                                 {activeView === 'security' && (
                                     <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 fade-in">
-                                        <div className="flex items-center gap-3 sm:gap-4 border-b border-borderLight pb-3 sm:pb-4 mb-4 sm:mb-6">
-                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-100 border border-borderLight flex items-center justify-center text-brand"><Icons.Settings/></div>
+                                        <div className="flex items-center gap-3 border-b border-borderLight pb-4">
+                                            <div className="w-9 h-9 rounded-lg bg-slate-100 border border-borderLight flex items-center justify-center text-brand"><Icons.Settings/></div>
                                             <div>
-                                                <h3 className="text-base sm:text-lg font-bold text-brand">Security Configuration</h3>
-                                                <p className="text-[10px] sm:text-xs text-slate-500 font-medium">Manage access controls and tool availability independently.</p>
+                                                <h3 className="text-base sm:text-lg font-bold text-brand">Security Settings</h3>
+                                                <p className="text-xs text-slate-500">Global controls for the tool.</p>
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col gap-4 sm:gap-6">
-                                            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-card">
-                                                <div className="flex items-start justify-between gap-4">
-                                                    <div className="min-w-0">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <h4 className="font-extrabold text-brand text-sm sm:text-base">Individual Mode Permissions</h4>
-                                                            <span className={`text-[9px] font-extrabold tracking-wider rounded-full px-2 py-1 border ${systemConfig.modeAccessEnabled ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{systemConfig.modeAccessEnabled ? 'ENFORCEMENT ON' : 'SETUP MODE'}</span>
-                                                        </div>
-                                                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">Grant or revoke POD, Wafa, Bank and Returns separately from each user card in Live Monitoring. The first access change automatically enables enforcement and preserves known devices in any mode list that has not been configured yet. After setup, only granted modes remain visible and usable.</p>
+                                        <div className="rounded-xl border border-borderLight bg-white p-4 sm:p-5 shadow-card">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <h4 className="text-sm font-bold text-brand">DATA Permission Enforcement</h4>
+                                                        <span className={`rounded-full border px-2 py-1 text-[9px] font-bold ${systemConfig.modeAccessEnabled ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>{systemConfig.modeAccessEnabled ? 'ON' : 'OFF'}</span>
                                                     </div>
-                                                    <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1" title="Enable or disable per-user mode enforcement">
-                                                        <input type="checkbox" className="sr-only peer" checked={systemConfig.modeAccessEnabled === true} onChange={e => handleModeAccessEnforcementToggle(e.target.checked)} />
-                                                        <div className="w-12 h-6 bg-slate-200 rounded-full peer-checked:bg-success after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-6"></div>
-                                                    </label>
+                                                    <p className="mt-1 text-xs text-slate-500">Controls whether POD, Wafa, Bank and Returns access is enforced per device.</p>
                                                 </div>
-                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-                                                    {[
-                                                        {label:'POD', key:'podUsers', tint:'text-blue-700 bg-blue-50 border-blue-100'},
-                                                        {label:'Wafa', key:'wafaUsers', tint:'text-violet-700 bg-violet-50 border-violet-100'},
-                                                        {label:'Bank', key:'bankUsers', tint:'text-amber-700 bg-amber-50 border-amber-100'},
-                                                        {label:'Returns', key:'returnsUsers', tint:'text-emerald-700 bg-emerald-50 border-emerald-100'}
-                                                    ].map(item => (
-                                                        <div key={item.key} className={`rounded-lg border px-3 py-2 ${item.tint}`}>
-                                                            <div className="text-[10px] font-bold uppercase tracking-wider">{item.label}</div>
-                                                            <div className="text-xl font-extrabold">{(systemConfig[item.key] || []).length}</div>
-                                                            <div className="text-[9px] font-semibold opacity-70">Device grants</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <button onClick={()=>setActiveView('monitoring')} className="mt-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 text-xs font-bold transition-colors">Manage user grants →</button>
+                                                <label className="relative inline-flex shrink-0 cursor-pointer items-center" title="Enable or disable per-user DATA mode enforcement">
+                                                    <input type="checkbox" className="sr-only peer" checked={systemConfig.modeAccessEnabled === true} onChange={e => handleModeAccessEnforcementToggle(e.target.checked)} />
+                                                    <div className="h-6 w-12 rounded-full bg-slate-200 peer-checked:bg-success after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all peer-checked:after:translate-x-6"></div>
+                                                </label>
                                             </div>
-                                            <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4 sm:p-5 shadow-card">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">▤</div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <h4 className="font-extrabold text-brand text-sm sm:text-base">Add Bill UI Access</h4>
-                                                            <span className="text-[9px] font-extrabold tracking-wider rounded-full px-2 py-1 bg-blue-100 text-blue-700 border border-blue-200">SEPARATE PERMISSION</span>
-                                                        </div>
-                                                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">Grant or revoke the redesigned Add Bill interface per user from each user card in Live Monitoring. This permission is stored separately from Auto-Pilot and Delivered Edit.</p>
-                                                        <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold">
-                                                            <span className="rounded-lg border border-blue-100 bg-white px-3 py-2 text-slate-600">Users granted: <b className="text-blue-700">{(systemConfig.addBillUsers || []).length}</b></span>
-                                                            <button onClick={()=>setActiveView('monitoring')} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 transition-colors shadow-sm">Manage user access →</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4 sm:p-5 shadow-card">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shadow-sm shrink-0">▣</div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <h4 className="font-extrabold text-brand text-sm sm:text-base">DRS Shipment Alert Access</h4>
-                                                            <span className="text-[9px] font-extrabold tracking-wider rounded-full px-2 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200">SEPARATE PERMISSION</span>
-                                                        </div>
-                                                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">Grant or revoke the DRS Scan Results monitor independently for each device. It does not change POD, Wafa, Bank, Returns or Add Bill permissions.</p>
-                                                        <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold">
-                                                            <span className="rounded-lg border border-emerald-100 bg-white px-3 py-2 text-slate-600">Users granted: <b className="text-emerald-700">{(systemConfig.drsAlertUsers || []).length}</b></span>
-                                                            <button onClick={()=>setActiveView('monitoring')} className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 transition-colors shadow-sm">Manage DRS Status access →</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="bg-white p-4 sm:p-6 rounded-xl border border-borderLight shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-slate-300 transition-colors">
+                                            <button onClick={()=>setActiveView('permissions')} className="mt-4 rounded-lg bg-brand px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-brandHover">Manage User Permissions</button>
+                                        </div>
+
+                                        <div className="flex flex-col gap-4">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-borderLight bg-white p-4 sm:p-5 shadow-card">
                                                 <div>
-                                                    <h4 className="font-bold text-brand text-sm sm:text-base mb-1">Master Tool Switch</h4>
-                                                    <p className="text-[10px] sm:text-xs text-slate-500 sm:max-w-sm leading-relaxed">Globally enable or disable the extension for all connected agents immediately. Overrides individual blocks.</p>
+                                                    <h4 className="text-sm font-bold text-brand mb-1">Master Tool Switch</h4>
+                                                    <p className="text-xs leading-relaxed text-slate-500 sm:max-w-sm">Globally enable or disable the extension for all connected agents immediately. Overrides individual blocks.</p>
                                                 </div>
-                                                <label className="relative inline-flex items-center cursor-pointer shrink-0 sm:ml-4 self-end sm:self-auto">
+                                                <label className="relative inline-flex shrink-0 cursor-pointer items-center">
                                                     <input type="checkbox" className="sr-only peer" checked={systemConfig.isActive} onChange={e => deployConfig({isActive: e.target.checked})} />
-                                                    <div className="w-12 sm:w-14 h-6 sm:h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 sm:peer-checked:after:translate-x-7 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 sm:after:h-6 after:w-5 sm:after:w-6 after:transition-all peer-checked:bg-success shadow-inner"></div>
+                                                    <div className="h-6 w-12 rounded-full bg-slate-200 peer-checked:bg-success after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all peer-checked:after:translate-x-6"></div>
                                                 </label>
                                             </div>
 
-                                            <div className="bg-white p-4 sm:p-6 rounded-xl border border-borderLight shadow-card flex flex-col hover:border-slate-300 transition-colors">
-                                                <div className="mb-3 sm:mb-4">
-                                                    <h4 className="font-bold text-brand text-sm sm:text-base mb-1">Agent Login Passcode</h4>
-                                                    <p className="text-[10px] sm:text-xs text-slate-500 leading-relaxed">Set the password required by agents to unlock the tool interface.</p>
+                                            <div className="rounded-xl border border-borderLight bg-white p-4 sm:p-5 shadow-card">
+                                                <div className="mb-3">
+                                                    <h4 className="text-sm font-bold text-brand mb-1">Agent Login Passcode</h4>
+                                                    <p className="text-xs leading-relaxed text-slate-500">Set the password required by agents to unlock the tool interface.</p>
                                                 </div>
                                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                                                    <input type="text" value={systemConfig.password} onChange={e=>setSystemConfig(prev=>({...prev, password: e.target.value}))} className="flex-1 bg-surface border border-borderLight rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-center text-base sm:text-lg font-mono tracking-widest text-brand font-bold focus:outline-none focus:border-accent transition-colors shadow-inner-light" />
-                                                    <button onClick={()=>deployConfig({})} className="w-full sm:w-auto px-6 py-2 sm:py-0 bg-brand hover:bg-brandHover text-white font-bold rounded-lg transition-colors text-xs sm:text-sm shadow-sm whitespace-nowrap">Save Passcode</button>
+                                                    <input type="text" value={systemConfig.password} onChange={e=>setSystemConfig(prev=>({...prev, password: e.target.value}))} className="flex-1 rounded-lg border border-borderLight bg-surface px-3 py-2.5 text-center font-mono text-base font-bold tracking-widest text-brand shadow-inner-light transition-colors focus:border-accent focus:outline-none" />
+                                                    <button onClick={()=>deployConfig({})} className="rounded-lg bg-brand px-6 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-brandHover">Save Passcode</button>
                                                 </div>
                                             </div>
                                         </div>
