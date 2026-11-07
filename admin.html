@@ -74,7 +74,7 @@
         // Existing Firebase permission arrays. These names are intentionally unchanged.
         const USER_PERMISSION_FIELDS = [
             'podUsers', 'wafaUsers', 'bankUsers', 'returnsUsers',
-            'addBillUsers', 'drsAlertUsers', 'autoPilotUsers', 'forceEditUsers', 'manifestUsers'
+            'addBillUsers', 'drsAlertUsers', 'autoPilotUsers', 'forceEditUsers', 'manifestUsers', 'managePodDateUsers'
         ];
         const DATA_PERMISSION_FIELDS = ['podUsers', 'wafaUsers', 'bankUsers', 'returnsUsers'];
 
@@ -186,7 +186,7 @@
             const [messages, setMessages] = useState({});
             
             // 🛑 تحديث حالة الـ Config لإضافة forceEditUsers 🛑
-            const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [], forceEditUsers: [], addBillUsers: [], drsAlertUsers: [], podUsers: [], wafaUsers: [], bankUsers: [], returnsUsers: [], manifestUsers: [], modeAccessEnabled: false, modeAccessInitialized: false });
+            const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [], forceEditUsers: [], addBillUsers: [], drsAlertUsers: [], podUsers: [], wafaUsers: [], bankUsers: [], returnsUsers: [], manifestUsers: [], managePodDateUsers: [], modeAccessEnabled: false, modeAccessInitialized: false });
             const [isOnline, setIsOnline] = useState(true);
 
             // Audit Logs Filters
@@ -248,6 +248,7 @@
                             addBillUsers: configData.addBillUsers || [],
                             drsAlertUsers: configData.drsAlertUsers || [],
                             manifestUsers: Array.isArray(configData.manifestUsers) ? configData.manifestUsers : [],
+                            managePodDateUsers: Array.isArray(configData.managePodDateUsers) ? configData.managePodDateUsers : [],
                             podUsers: configData.podUsers || [],
                             wafaUsers: configData.wafaUsers || [],
                             bankUsers: configData.bankUsers || [],
@@ -312,6 +313,7 @@
                             addBillUsers: newConfig.addBillUsers || [],
                             drsAlertUsers: newConfig.drsAlertUsers || [],
                             manifestUsers: newConfig.manifestUsers || [],
+                            managePodDateUsers: newConfig.managePodDateUsers || [],
                             podUsers: newConfig.podUsers || [],
                             wafaUsers: newConfig.wafaUsers || [],
                             bankUsers: newConfig.bankUsers || [],
@@ -496,7 +498,7 @@
                     if (systemConfig.modeAccessEnabled !== true) partial.modeAccessEnabled = true;
                 }
 
-                ['addBillUsers', 'drsAlertUsers', 'autoPilotUsers', 'forceEditUsers', 'manifestUsers'].forEach(field => {
+                ['addBillUsers', 'drsAlertUsers', 'autoPilotUsers', 'forceEditUsers', 'manifestUsers', 'managePodDateUsers'].forEach(field => {
                     if (!permissionTouchedFields[field]) return;
                     const next = Array.isArray(systemConfig[field]) ? [...systemConfig[field]] : [];
                     ids.forEach(id => {
@@ -902,6 +904,7 @@
                                                 const isForceEditAuth = groupHas('forceEditUsers');
                                                 const isAddBillAuth = groupHas('addBillUsers');
                                                 const isDrsAlertAuth = groupHas('drsAlertUsers');
+                                                const isManagePodDateAuth = groupHas('managePodDateUsers');
                                                 const isPodAuth = groupHas('podUsers');
                                                 const isWafaAuth = groupHas('wafaUsers');
                                                 const isBankAuth = groupHas('bankUsers');
@@ -968,9 +971,10 @@
                                                                 {isReturnsAuth && <span title={`Returns: ${groupCount('returnsUsers')}/${group.devices.length} devices`} className="rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700">Returns</span>}
                                                                 {isAddBillAuth && <span title={`Add AWB: ${groupCount('addBillUsers')}/${group.devices.length} devices`} className="rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1 text-[9px] font-bold text-indigo-700">Add AWB</span>}
                                                                 {isDrsAlertAuth && <span title={`DRS: ${groupCount('drsAlertUsers')}/${group.devices.length} devices`} className="rounded-md border border-teal-100 bg-teal-50 px-2 py-1 text-[9px] font-bold text-teal-700">DRS</span>}
+                                                                {isManagePodDateAuth && <span title={`Manage POD Date: ${groupCount('managePodDateUsers')}/${group.devices.length} devices`} className="rounded-md border border-cyan-100 bg-cyan-50 px-2 py-1 text-[9px] font-bold text-cyan-700">POD DATE</span>}
                                                                 {isAutoPilotAuth && <span title={`Auto-Pilot: ${groupCount('autoPilotUsers')}/${group.devices.length} devices`} className="rounded-md border border-purple-100 bg-purple-50 px-2 py-1 text-[9px] font-bold text-purple-700">Auto-Pilot</span>}
                                                                 {isForceEditAuth && <span title={`Delivered Edit: ${groupCount('forceEditUsers')}/${group.devices.length} devices`} className="rounded-md border border-orange-100 bg-orange-50 px-2 py-1 text-[9px] font-bold text-orange-700">Delivered Edit</span>}
-                                                                {!isPodAuth && !isWafaAuth && !isBankAuth && !isReturnsAuth && !isAddBillAuth && !isDrsAlertAuth && !isAutoPilotAuth && !isForceEditAuth && <span className="text-[10px] text-slate-400">No individual permissions granted</span>}
+                                                                {!isPodAuth && !isWafaAuth && !isBankAuth && !isReturnsAuth && !isAddBillAuth && !isDrsAlertAuth && !isManagePodDateAuth && !isAutoPilotAuth && !isForceEditAuth && <span className="text-[10px] text-slate-400">No individual permissions granted</span>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1060,6 +1064,7 @@
                                                                     <PermissionSwitch label="Wafa" checked={permissionDraft.wafaUsers} grantedCount={getPermissionGrantCount('wafaUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('wafaUsers',v)} />
                                                                     <PermissionSwitch label="Bank" checked={permissionDraft.bankUsers} grantedCount={getPermissionGrantCount('bankUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('bankUsers',v)} />
                                                                     <PermissionSwitch label="Returns" checked={permissionDraft.returnsUsers} grantedCount={getPermissionGrantCount('returnsUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('returnsUsers',v)} />
+                                                                    <PermissionSwitch label="Manage POD Date" description="Open the separate AdminPOD_Manage date bulk updater from MAT Tool" checked={permissionDraft.managePodDateUsers} grantedCount={getPermissionGrantCount('managePodDateUsers', selectedPermissionGroup.deviceIds)} totalCount={selectedPermissionGroup.deviceIds.length} onChange={v=>updatePermissionDraft('managePodDateUsers',v)} />
                                                                 </div>
                                                             </details>
 
