@@ -187,6 +187,9 @@
             
             // 🛑 تحديث حالة الـ Config لإضافة forceEditUsers 🛑
             const [systemConfig, setSystemConfig] = useState({ isActive: true, password: '0282003', blockedDevices: [], accDb: {}, holidays: [], autoPilotUsers: [], forceEditUsers: [], addBillUsers: [], drsAlertUsers: [], podUsers: [], wafaUsers: [], bankUsers: [], returnsUsers: [], manifestUsers: [], managePodDateUsers: [], modeAccessEnabled: false, modeAccessInitialized: false });
+            const [passcodeDraft, setPasscodeDraft] = useState('0282003');
+const passcodeDirtyRef = useRef(false);
+const passcodeEditVersionRef = useRef(0);
             const [isOnline, setIsOnline] = useState(true);
 
             // Audit Logs Filters
@@ -222,6 +225,7 @@
             const showToast = (msg, type='success') => setToast({msg, type});
 
             const fetchEngine = async () => {
+                const passcodeFetchVersion = passcodeEditVersionRef.current;
                 try {
                     const [devRes, configRes, msgRes] = await Promise.all([
                         fetch(`${BASE_URL}/activeDevices.json`),
@@ -256,6 +260,9 @@
                             modeAccessEnabled: configData.modeAccessEnabled === true,
                             modeAccessInitialized: configData.modeAccessInitialized === true
                         });
+                        if (!passcodeDirtyRef.current && passcodeEditVersionRef.current === passcodeFetchVersion) {
+    setPasscodeDraft(configData.password || '0282003');
+}
                     }
                     setIsOnline(true);
                 } catch (err) { setIsOnline(false); }
@@ -1285,9 +1292,9 @@
                                                     <h4 className="text-sm font-bold text-brand mb-1">Agent Login Passcode</h4>
                                                     <p className="text-xs leading-relaxed text-slate-500">Set the password required by agents to unlock the tool interface.</p>
                                                 </div>
-                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                                                    <input type="text" value={systemConfig.password} onChange={e=>setSystemConfig(prev=>({...prev, password: e.target.value}))} className="flex-1 rounded-lg border border-borderLight bg-surface px-3 py-2.5 text-center font-mono text-base font-bold tracking-widest text-brand shadow-inner-light transition-colors focus:border-accent focus:outline-none" />
-                                                    <button onClick={()=>deployConfig({})} className="rounded-lg bg-brand px-6 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-brandHover">Save Passcode</button>
+                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">                                                
+                                                    <input type="text" value={passcodeDraft} onChange={e=>{passcodeDirtyRef.current=true;passcodeEditVersionRef.current+=1;setPasscodeDraft(e.target.value);}} className="flex-1 rounded-lg border border-borderLight bg-surface px-3 py-2.5 text-center font-mono text-base font-bold tracking-widest text-brand shadow-inner-light transition-colors focus:border-accent focus:outline-none" />
+                                                    <button onClick={async()=>{const value=String(passcodeDraft||"").trim();if(!value){showToast("Agent Login Passcode cannot be empty","error");return;}const editVersion=passcodeEditVersionRef.current;const saved=await deployConfig({password:value});if(saved&&passcodeEditVersionRef.current===editVersion){passcodeEditVersionRef.current+=1;passcodeDirtyRef.current=false;setPasscodeDraft(value);}}} className="rounded-lg bg-brand px-6 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-brandHover">Save Passcode</button>
                                                 </div>
                                             </div>
                                         </div>
