@@ -1,0 +1,121 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAT Tool Bridge</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:22px;font:14px/1.5 system-ui;background:#f3f6fb;color:#172033}
+.card{max-width:520px;margin:18px auto;background:#fff;border:1px solid #dbe3ef;border-radius:16px;padding:22px;box-shadow:0 12px 35px #17203312}
+.top{display:flex;align-items:center;gap:12px}
+.mark{width:42px;height:42px;border-radius:12px;background:#e8efff;color:#2458c6;display:grid;place-items:center;font-weight:800;font-size:17px}
+.muted{color:#64748b}
+.status{display:flex;align-items:center;gap:9px;margin-top:22px;padding:12px 14px;border-radius:10px;background:#f1f5f9}
+.dot{width:9px;height:9px;border-radius:50%;background:#94a3b8}
+.ok .dot{background:#16a34a}
+.bad .dot{background:#dc2626}
+.small{font-size:12px;margin-top:15px;color:#64748b}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top">
+    <div class="mark">MAT</div>
+    <div><strong>MAT Tool Bridge</strong><div class="muted">Secure connection relay</div></div>
+  </div>
+  <div id="status" class="status">
+    <span class="dot"></span>
+    <span id="statusText">Waiting for Matrix connection…</span>
+  </div>
+  <p class="small">Keep this small window open while MAT Tool is running.</p>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  const MATRIX_ORIGIN = 'https://matrix.skybagegypt.com';
+  const FIREBASE_ORIGIN = 'https://matrix-tool-admin-default-rtdb.firebaseio.com';
+
+  const statusBox = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+
+  function setStatus(text, state) {
+    statusText.textContent = text;
+    statusBox.className = 'status' + (state ? ' ' + state : '');
+  }
+
+  function reply(payload) {
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage(payload, MATRIX_ORIGIN);
+    }
+  }
+
+  window.addEventListener('message', async function (event) {
+    if (event.origin !== MATRIX_ORIGIN || event.source !== window.opener) return;
+
+    const msg = event.data;
+    if (!msg || msg.type !== 'MAT_BRIDGE_REQUEST' || typeof msg.id !== 'string') return;
+
+    try {
+      const url = new URL(String(msg.url || ''));
+
+      if (url.protocol !== 'https:' || url.origin !== FIREBASE_ORIGIN) {
+        throw new Error('Request destination is not allowed');
+      }
+
+      const method = String(msg.method || 'GET').toUpperCase();
+
+      if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        throw new Error('HTTP method is not allowed');
+      }
+
+      const headers = new Headers(Array.isArray(msg.headers) ? msg.headers : []);
+      const init = {
+        method,
+        headers,
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-store'
+      };
+
+      if (!['GET', 'HEAD', 'DELETE'].includes(method) && msg.body != null) {
+        init.body = String(msg.body);
+      }
+
+      const response = await fetch(url.href, init);
+      const body = [204, 205, 304].includes(response.status) ? '' : await response.text();
+
+      reply({
+        type: 'MAT_BRIDGE_RESPONSE',
+        id: msg.id,
+        status: response.status,
+        statusText: response.statusText || '',
+        headers: Array.from(response.headers.entries()),
+        body
+      });
+
+      setStatus('Connected · Firebase relay active', 'ok');
+
+    } catch (error) {
+      reply({
+        type: 'MAT_BRIDGE_ERROR',
+        id: msg.id,
+        error: String(error && error.message || error)
+      });
+
+      setStatus('Connection error · ' + String(error && error.message || error), 'bad');
+    }
+  });
+
+  if (window.opener && !window.opener.closed) {
+    setStatus('Bridge ready · waiting for MAT Tool', 'ok');
+    reply({ type: 'MAT_BRIDGE_READY' });
+  } else {
+    setStatus('Open this page using the MAT Tool launcher', '');
+  }
+})();
+</script>
+</body>
+</html>
