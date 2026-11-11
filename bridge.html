@@ -1,120 +1,222 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MAT Tool Bridge</title>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:22px;font:14px/1.5 system-ui;background:#f3f6fb;color:#172033}
-.card{max-width:520px;margin:18px auto;background:#fff;border:1px solid #dbe3ef;border-radius:16px;padding:22px;box-shadow:0 12px 35px #17203312}
+body{
+  margin:0;
+  padding:22px;
+  font:14px/1.5 system-ui;
+  background:#f3f6fb;
+  color:#172033
+}
+.card{
+  max-width:520px;
+  margin:18px auto;
+  background:#fff;
+  border:1px solid #dbe3ef;
+  border-radius:16px;
+  padding:22px;
+  box-shadow:0 12px 35px #17203312
+}
 .top{display:flex;align-items:center;gap:12px}
-.mark{width:42px;height:42px;border-radius:12px;background:#e8efff;color:#2458c6;display:grid;place-items:center;font-weight:800;font-size:17px}
+.mark{
+  width:42px;height:42px;border-radius:12px;
+  background:#e8efff;color:#2458c6;
+  display:grid;place-items:center;
+  font-weight:800;font-size:17px
+}
 .muted{color:#64748b}
-.status{display:flex;align-items:center;gap:9px;margin-top:22px;padding:12px 14px;border-radius:10px;background:#f1f5f9}
+.status{
+  display:flex;align-items:center;gap:9px;
+  margin-top:22px;padding:12px 14px;
+  border-radius:10px;background:#f1f5f9
+}
 .dot{width:9px;height:9px;border-radius:50%;background:#94a3b8}
 .ok .dot{background:#16a34a}
 .bad .dot{background:#dc2626}
 .small{font-size:12px;margin-top:15px;color:#64748b}
 </style>
 </head>
+
 <body>
 <div class="card">
   <div class="top">
     <div class="mark">MAT</div>
     <div>
       <strong>MAT Tool Bridge</strong>
-      <div class="muted">Restricted connection relay</div>
+      <div class="muted">Secure connection relay</div>
     </div>
   </div>
+
   <div id="status" class="status">
     <span class="dot"></span>
-    <span id="statusText">Waiting for Matrix connection…</span>
+    <span id="statusText">Initializing...</span>
   </div>
-  <p class="small">Keep this window open while MAT Tool is running.</p>
+
+  <p class="small">
+    MAT Tool background connection service.
+  </p>
 </div>
 
 <script>
-(function () {
+(function(){
   'use strict';
 
-  const MATRIX_ORIGIN = 'https://matrix.skybagegypt.com';
-  const FIREBASE_ORIGIN = 'https://matrix-tool-admin-default-rtdb.firebaseio.com';
+  /* ======================================
+     1. CONNECTION CONFIGURATION
+  ====================================== */
+
+  const MATRIX_ORIGIN =
+    'https://matrix.skybagegypt.com';
+
+  const FIREBASE_ORIGIN =
+    'https://matrix-tool-admin-default-rtdb.firebaseio.com';
+
+  const IN_FRAME = window.parent !== window;
+
+  const CLIENT_WINDOW = IN_FRAME
+    ? window.parent
+    : window.opener;
 
   const statusBox = document.getElementById('status');
   const statusText = document.getElementById('statusText');
 
-  function setStatus(text, state) {
-    statusText.textContent = text;
-    statusBox.className = 'status' + (state ? ' ' + state : '');
+  function setStatus(message,state){
+    statusText.textContent = message;
+    statusBox.className =
+      'status' + (state ? ' ' + state : '');
   }
 
-  function reply(payload) {
-    if (window.opener && !window.opener.closed) {
-      window.opener.postMessage(payload, MATRIX_ORIGIN);
+  function reply(payload){
+    if(!CLIENT_WINDOW) return;
+
+    try{
+      CLIENT_WINDOW.postMessage(
+        payload,
+        MATRIX_ORIGIN
+      );
+    }catch(error){
+      console.error('[MAT Bridge] Reply failed:',error);
     }
   }
 
-  function routeAllowed(path, method) {
-    if (path === '/systemStatus.json' && method === 'GET') return true;
+  /* ======================================
+     2. FIREBASE ROUTE WHITELIST
+  ====================================== */
 
-    if (
+  function routeAllowed(path,method){
+
+    if(
+      path === '/systemStatus.json' &&
+      method === 'GET'
+    ) return true;
+
+    if(
       /^\/activeDevices\/[A-Za-z0-9_-]{3,80}\.json$/.test(path) &&
       method === 'PUT'
     ) return true;
 
-    if (
+    if(
       /^\/systemStatus\/messages\/[A-Za-z0-9_-]{3,80}\.json$/.test(path) &&
-      ['GET', 'PUT'].includes(method)
+      ['GET','PUT'].includes(method)
     ) return true;
 
-    if (path === '/masterLogs.json' && method === 'POST') return true;
+    if(
+      path === '/masterLogs.json' &&
+      method === 'POST'
+    ) return true;
 
     return false;
   }
 
-  function validateBody(path, method, body) {
-    if (!body) return true;
+  /* ======================================
+     3. REQUEST BODY VALIDATION
+  ====================================== */
 
-    if (body.length > 512000) {
+  function validateBody(path,method,body){
+
+    if(body === null || body === '') return true;
+
+    if(body.length > 512000){
       throw new Error('Request body too large');
     }
 
-    if (method === 'GET') {
+    if(method === 'GET' || method === 'HEAD'){
       throw new Error('GET request cannot contain a body');
     }
 
     let data;
-    try {
+
+    try{
       data = JSON.parse(body);
-    } catch (_) {
-      throw new Error('Invalid JSON request body');
+    }catch(error){
+      throw new Error('Invalid JSON request');
     }
 
-    if (path.startsWith('/activeDevices/')) {
-      const allowed = [
-        'lastSeen','os','user','count','currentMode',
-        'lastAwb','apActive','apStats'
+    if(
+      !data ||
+      typeof data !== 'object' ||
+      Array.isArray(data)
+    ){
+      throw new Error('Invalid request structure');
+    }
+
+    /* Device heartbeat */
+
+    if(
+      path.startsWith('/activeDevices/') &&
+      method === 'PUT'
+    ){
+      const allowedFields = [
+        'lastSeen',
+        'os',
+        'user',
+        'count',
+        'currentMode',
+        'lastAwb',
+        'apActive',
+        'apStats'
       ];
 
-      if (!data || typeof data !== 'object' || Array.isArray(data) ||
-          !Number.isFinite(Number(data.lastSeen)) ||
-          Object.keys(data).some(key => !allowed.includes(key))) {
-        throw new Error('Device heartbeat payload rejected');
+      if(
+        !Number.isFinite(Number(data.lastSeen)) ||
+        Object.keys(data).some(
+          key => !allowedFields.includes(key)
+        )
+      ){
+        throw new Error('Device heartbeat rejected');
       }
     }
 
-    if (path === '/masterLogs.json') {
-      if (!data || typeof data !== 'object' || Array.isArray(data) ||
-          !data.user || !data.device || !data.awb || !data.status) {
-        throw new Error('Activity log payload rejected');
+    /* Activity logs */
+
+    if(
+      path === '/masterLogs.json' &&
+      method === 'POST'
+    ){
+      if(
+        !data.user ||
+        !data.device ||
+        !data.awb ||
+        !data.status
+      ){
+        throw new Error('Activity log rejected');
       }
     }
 
-    if (path.startsWith('/systemStatus/messages/') && method === 'PUT') {
-      if (!data || typeof data !== 'object' || Array.isArray(data) ||
-          !Array.isArray(data.chat)) {
+    /* User messages */
+
+    if(
+      path.startsWith('/systemStatus/messages/') &&
+      method === 'PUT'
+    ){
+      if(!Array.isArray(data.chat)){
         throw new Error('Message payload rejected');
       }
     }
@@ -122,92 +224,178 @@ body{margin:0;padding:22px;font:14px/1.5 system-ui;background:#f3f6fb;color:#172
     return true;
   }
 
-  window.addEventListener('message', async function (event) {
-    if (event.origin !== MATRIX_ORIGIN || event.source !== window.opener) return;
+  /* ======================================
+     4. MESSAGE REQUEST HANDLER
+  ====================================== */
+
+  window.addEventListener('message',async function(event){
+
+    if(event.origin !== MATRIX_ORIGIN) return;
+    if(event.source !== CLIENT_WINDOW) return;
 
     const msg = event.data;
-    if (!msg || msg.type !== 'MAT_BRIDGE_REQUEST' ||
-        typeof msg.id !== 'string') return;
 
-    try {
+    if(
+      !msg ||
+      msg.type !== 'MAT_BRIDGE_REQUEST' ||
+      typeof msg.id !== 'string' ||
+      msg.id.length > 128
+    ) return;
+
+    try{
+
       const url = new URL(String(msg.url || ''));
 
-      if (url.protocol !== 'https:' ||
-          url.origin !== FIREBASE_ORIGIN ||
-          url.username || url.password || url.hash) {
-        throw new Error('Request destination is not allowed');
+      if(
+        url.protocol !== 'https:' ||
+        url.origin !== FIREBASE_ORIGIN ||
+        url.username ||
+        url.password ||
+        url.hash
+      ){
+        throw new Error('Request destination not allowed');
       }
 
-      const method = String(msg.method || 'GET').toUpperCase();
+      const method = String(
+        msg.method || 'GET'
+      ).toUpperCase();
+
       const path = url.pathname;
 
-      if (!routeAllowed(path, method)) {
-        throw new Error('Firebase route or method is not allowed');
+      if(!routeAllowed(path,method)){
+        throw new Error(
+          'Firebase route or method not allowed: ' +
+          method + ' ' + path
+        );
       }
 
-      const body = msg.body == null ? null : String(msg.body);
-      validateBody(path, method, body);
+      const body =
+        msg.body == null
+          ? null
+          : String(msg.body);
+
+      validateBody(path,method,body);
+
+      /* Only forward the required content type */
 
       const headers = new Headers();
-      const supplied = msg.headers || {};
-      const contentType = supplied['Content-Type'] ||
-                          supplied['content-type'];
 
-      if (contentType) {
-        headers.set('Content-Type', String(contentType));
+      const supplied = msg.headers || {};
+
+      const contentType =
+        supplied['Content-Type'] ||
+        supplied['content-type'];
+
+      if(contentType){
+        headers.set(
+          'Content-Type',
+          String(contentType)
+        );
       }
 
-      const init = {
+      const requestOptions = {
         method,
         headers,
-        credentials: 'omit',
-        cache: 'no-store',
-        mode: 'cors'
+        credentials:'omit',
+        cache:'no-store',
+        mode:'cors',
+        redirect:'error',
+        referrerPolicy:'no-referrer'
       };
 
-      if (!['GET', 'HEAD'].includes(method) && body !== null) {
-        init.body = body;
+      if(
+        !['GET','HEAD'].includes(method) &&
+        body !== null
+      ){
+        requestOptions.body = body;
       }
 
-      const response = await fetch(url.href, init);
-      const responseBody = [204,205,304].includes(response.status)
-        ? ''
-        : await response.text();
+      /* Actual Firebase request */
 
-      if (responseBody.length > 1500000) {
+      const response = await fetch(
+        url.href,
+        requestOptions
+      );
+
+      const responseBody =
+        [204,205,304].includes(response.status)
+          ? ''
+          : await response.text();
+
+      if(responseBody.length > 1500000){
         throw new Error('Firebase response too large');
       }
 
+      /* Return response to Matrix */
+
       reply({
-        type: 'MAT_BRIDGE_RESPONSE',
-        id: msg.id,
-        status: response.status,
-        statusText: response.statusText || '',
-        headers: Array.from(response.headers.entries()),
-        body: responseBody
+        type:'MAT_BRIDGE_RESPONSE',
+        id:msg.id,
+        status:response.status,
+        statusText:response.statusText || '',
+        headers:Array.from(response.headers.entries()),
+        body:responseBody
       });
 
-      setStatus('Firebase relay active · HTTP ' + response.status,
-        response.ok ? 'ok' : 'bad');
+      setStatus(
+        'Firebase relay active · HTTP ' + response.status,
+        response.ok ? 'ok' : 'bad'
+      );
 
-    } catch (error) {
+    }catch(error){
+
+      console.error('[MAT Bridge]',error);
+
       reply({
-        type: 'MAT_BRIDGE_ERROR',
-        id: msg.id,
-        error: String(error && error.message || error)
+        type:'MAT_BRIDGE_ERROR',
+        id:msg.id,
+        error:String(
+          error && error.message
+            ? error.message
+            : error
+        )
       });
 
-      setStatus('Request rejected · ' +
-        String(error && error.message || error), 'bad');
+      setStatus(
+        'Request rejected · ' +
+        String(error && error.message || error),
+        'bad'
+      );
     }
   });
 
-  if (window.opener && !window.opener.closed) {
-    setStatus('Bridge ready · waiting for MAT Tool', 'ok');
-    reply({ type: 'MAT_BRIDGE_READY' });
-  } else {
-    setStatus('Open this page using the MAT Tool launcher', '');
+  /* ======================================
+     5. INITIAL HANDSHAKE
+  ====================================== */
+
+  if(CLIENT_WINDOW){
+
+    if(IN_FRAME){
+      setStatus(
+        'Hidden Bridge ready · Matrix connected',
+        'ok'
+      );
+    }else{
+      setStatus(
+        'Bridge ready · waiting for MAT Tool',
+        'ok'
+      );
+    }
+
+    reply({
+      type:'MAT_BRIDGE_READY',
+      version:'2.0',
+      mode:IN_FRAME ? 'iframe' : 'popup'
+    });
+
+  }else{
+
+    setStatus(
+      'Open this page using the MAT Tool launcher',
+      ''
+    );
   }
+
 })();
 </script>
 </body>
