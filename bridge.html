@@ -23,14 +23,18 @@ body{margin:0;padding:22px;font:14px/1.5 system-ui;background:#f3f6fb;color:#172
 <div class="card">
   <div class="top">
     <div class="mark">MAT</div>
-    <div><strong>MAT Tool Bridge</strong><div class="muted">Secure connection relay</div></div>
+    <div>
+      <strong>MAT Tool Bridge</strong>
+      <div class="muted">Restricted connection relay</div>
+    </div>
   </div>
   <div id="status" class="status">
     <span class="dot"></span>
     <span id="statusText">Waiting for Matrix connection…</span>
   </div>
-  <p class="small">Keep this small window open while MAT Tool is running.</p>
+  <p class="small">Keep this window open while MAT Tool is running.</p>
 </div>
+
 <script>
 (function () {
   'use strict';
@@ -52,40 +56,127 @@ body{margin:0;padding:22px;font:14px/1.5 system-ui;background:#f3f6fb;color:#172
     }
   }
 
+  function routeAllowed(path, method) {
+    if (path === '/systemStatus.json' && method === 'GET') return true;
+
+    if (
+      /^\/activeDevices\/[A-Za-z0-9_-]{3,80}\.json$/.test(path) &&
+      method === 'PUT'
+    ) return true;
+
+    if (
+      /^\/systemStatus\/messages\/[A-Za-z0-9_-]{3,80}\.json$/.test(path) &&
+      ['GET', 'PUT'].includes(method)
+    ) return true;
+
+    if (path === '/masterLogs.json' && method === 'POST') return true;
+
+    return false;
+  }
+
+  function validateBody(path, method, body) {
+    if (!body) return true;
+
+    if (body.length > 512000) {
+      throw new Error('Request body too large');
+    }
+
+    if (method === 'GET') {
+      throw new Error('GET request cannot contain a body');
+    }
+
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (_) {
+      throw new Error('Invalid JSON request body');
+    }
+
+    if (path.startsWith('/activeDevices/')) {
+      const allowed = [
+        'lastSeen','os','user','count','currentMode',
+        'lastAwb','apActive','apStats'
+      ];
+
+      if (!data || typeof data !== 'object' || Array.isArray(data) ||
+          !Number.isFinite(Number(data.lastSeen)) ||
+          Object.keys(data).some(key => !allowed.includes(key))) {
+        throw new Error('Device heartbeat payload rejected');
+      }
+    }
+
+    if (path === '/masterLogs.json') {
+      if (!data || typeof data !== 'object' || Array.isArray(data) ||
+          !data.user || !data.device || !data.awb || !data.status) {
+        throw new Error('Activity log payload rejected');
+      }
+    }
+
+    if (path.startsWith('/systemStatus/messages/') && method === 'PUT') {
+      if (!data || typeof data !== 'object' || Array.isArray(data) ||
+          !Array.isArray(data.chat)) {
+        throw new Error('Message payload rejected');
+      }
+    }
+
+    return true;
+  }
+
   window.addEventListener('message', async function (event) {
     if (event.origin !== MATRIX_ORIGIN || event.source !== window.opener) return;
 
     const msg = event.data;
-    if (!msg || msg.type !== 'MAT_BRIDGE_REQUEST' || typeof msg.id !== 'string') return;
+    if (!msg || msg.type !== 'MAT_BRIDGE_REQUEST' ||
+        typeof msg.id !== 'string') return;
 
     try {
       const url = new URL(String(msg.url || ''));
 
-      if (url.protocol !== 'https:' || url.origin !== FIREBASE_ORIGIN) {
+      if (url.protocol !== 'https:' ||
+          url.origin !== FIREBASE_ORIGIN ||
+          url.username || url.password || url.hash) {
         throw new Error('Request destination is not allowed');
       }
 
       const method = String(msg.method || 'GET').toUpperCase();
+      const path = url.pathname;
 
-      if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-        throw new Error('HTTP method is not allowed');
+      if (!routeAllowed(path, method)) {
+        throw new Error('Firebase route or method is not allowed');
       }
 
-      const headers = new Headers(Array.isArray(msg.headers) ? msg.headers : []);
+      const body = msg.body == null ? null : String(msg.body);
+      validateBody(path, method, body);
+
+      const headers = new Headers();
+      const supplied = msg.headers || {};
+      const contentType = supplied['Content-Type'] ||
+                          supplied['content-type'];
+
+      if (contentType) {
+        headers.set('Content-Type', String(contentType));
+      }
+
       const init = {
         method,
         headers,
-        mode: 'cors',
         credentials: 'omit',
-        cache: 'no-store'
+        cache: 'no-store',
+        mode: 'cors'
       };
 
-      if (!['GET', 'HEAD', 'DELETE'].includes(method) && msg.body != null) {
-        init.body = String(msg.body);
+      if (!['GET', 'HEAD'].includes(method) && body !== null) {
+        init.body = body;
       }
 
       const response = await fetch(url.href, init);
-      const body = [204, 205, 304].includes(response.status) ? '' : await response.text();
+      const responseBody = [204,205,304].includes(response.status)
+        ? ''
+        : await response.text();
+
+      if (responseBody.length > 1500000) {
+        throw new Error('Firebase response too large');
+      }
 
       reply({
         type: 'MAT_BRIDGE_RESPONSE',
@@ -93,10 +184,11 @@ body{margin:0;padding:22px;font:14px/1.5 system-ui;background:#f3f6fb;color:#172
         status: response.status,
         statusText: response.statusText || '',
         headers: Array.from(response.headers.entries()),
-        body
+        body: responseBody
       });
 
-      setStatus('Connected · Firebase relay active', 'ok');
+      setStatus('Firebase relay active · HTTP ' + response.status,
+        response.ok ? 'ok' : 'bad');
 
     } catch (error) {
       reply({
@@ -105,7 +197,8 @@ body{margin:0;padding:22px;font:14px/1.5 system-ui;background:#f3f6fb;color:#172
         error: String(error && error.message || error)
       });
 
-      setStatus('Connection error · ' + String(error && error.message || error), 'bad');
+      setStatus('Request rejected · ' +
+        String(error && error.message || error), 'bad');
     }
   });
 
